@@ -19,19 +19,21 @@ elif [[ $version == *"15.04"* ]] ; then
     sudo apt-get install cuda-7-5
 elif [[ $version == *"16.04"* ]] ; then
   #This is the one that will run on my implementation
-    wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.44-1_amd64.deb
-    sudo dpkg -i cuda-repo-ubuntu1604_8.0.44-1_amd64.deb
-    rm cuda-repo-ubuntu1604_8.0.44-1_amd64.deb
-    sudo add-apt-repository ppa:openjdk-r/ppa 
-    sudo apt-get update
-    sudo apt-get install cuda-8-0
+  #But I think I've already done it manually...?
+    echo "complete"
+    #wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.44-1_amd64.deb
+    #sudo dpkg -i cuda-repo-ubuntu1604_8.0.44-1_amd64.deb
+    #rm cuda-repo-ubuntu1604_8.0.44-1_amd64.deb
+    #sudo add-apt-repository ppa:openjdk-r/ppa 
+    #sudo apt-get update
+    #sudo apt-get install cuda-8-0
 else
     echo "Don't use this on anything except 14.04, 15.04, or 16.04"
     exit
 fi
 
 #Actually install the dependencies if they are not already installed
-apt-get install -y cmake-qt-gui git build-essential libusb-1.0-0-dev libudev-dev openjdk-7-jdk freeglut3-dev libglew-dev libsuitesparse-dev libeigen3-dev zlib1g-dev libjpeg-dev
+sudo apt-get install -y cmake-qt-gui git build-essential libusb-1.0-0-dev libudev-dev openjdk-7-jdk freeglut3-dev libglew-dev libeigen3-dev zlib1g-dev libjpeg-dev
 
 #Installing Pangolin
 git clone https://github.com/stevenlovegrove/Pangolin.git
@@ -43,7 +45,8 @@ make -j8
 cd ../..
 
 #Up to date OpenNI2
-git clone https://github.com/occipital/OpenNI2.git
-cd OpenNI2
-make -j8
-cd ..
+#I did this with SLAMBench because it's different with the TX2. Should be OK 
+#git clone https://github.com/occipital/OpenNI2.git
+#cd OpenNI2
+#make -j8
+#cd ..

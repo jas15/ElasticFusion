@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Remove dependencies
-rm -rf deps/
+#rm -rf deps/
 
 #Remove main build folder
 rm -rf build/

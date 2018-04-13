@@ -4,13 +4,13 @@
 cd Core/
 mkdir build
 cd build/
-cmake ../src
+cmake ../src #Here is the SuiteSparse issue. Working on it
 make
 cd ../../
 
 #Build GUI
-cd GUI/
-mkdir build
-cd build/
-cmake ../src
-make
+#cd GUI/
+#mkdir build
+#cd build/
+#cmake ../src
+#make
