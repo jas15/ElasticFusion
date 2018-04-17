@@ -6,48 +6,14 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
 
 find_package(Pangolin 0.1 REQUIRED)
 find_package(CUDA REQUIRED)
-#find_package(SuiteSparse REQUIRED)
-
-#################################################################
-
-#...
-
-# ------------------------------------------------------------------
-# Detect SuiteSparse libraries:
-# If not found automatically, set SuiteSparse_DIR in CMake to the 
-# directory where SuiteSparse was built.
-# ------------------------------------------------------------------
-##Note CMAKE_SOURCE_DIR is the /src path
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}") # Add the directory where FindSuiteSparse.cmake module can be found.
-
-set(SuiteSparse_USE_LAPACK_BLAS ON)
-find_package(SuiteSparse QUIET NO_MODULE)  # 1st: Try to locate the *config.cmake file.
-if(NOT SuiteSparse_FOUND)
-  #set(SuiteSparse_VERBOSE ON)
-  find_package(SuiteSparse REQUIRED) # 2nd: Use FindSuiteSparse.cmake module
-  include_directories(${SuiteSparse_INCLUDE_DIRS})
-else()
-  message(STATUS "Find SuiteSparse : include(${USE_SuiteSparse})")
-  include(${USE_SuiteSparse})
-endif()
-MESSAGE(STATUS "SuiteSparse_LIBS: ${SuiteSparse_LIBRARIES}")
-# ------------------------------------------------------------------
-#   End of SuiteSparse detection
-# ------------------------------------------------------------------
-
-#...
-
-#TARGET_LINK_LIBRARIES(MY_PROGRAM ${SuiteSparse_LIBRARIES})
-
-#################################################################
+find_package(SuiteSparse REQUIRED)
 
 set(efusion_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Shaders" CACHE PATH "Where the shaders live")
 
 include_directories(${Pangolin_INCLUDE_DIRS})
 include_directories(${CUDA_INCLUDE_DIRS})
 include_directories(${EIGEN_INCLUDE_DIRS})
-include_directories(${SuiteSparse_INCLUDE_DIRS}) #was below
-#include_directories(${SUITESPARSE_INCLUDE_DIRS})
+include_directories(${SUITESPARSE_INCLUDE_DIRS})
 
 file(GLOB srcs *.cpp)
 file(GLOB utils_srcs Utils/*.cpp)
@@ -79,6 +45,7 @@ if(WIN32)
   set(ADDITIONAL_CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 endif()
 
+#NOTE -msse2 -msse3 is temperamental: it did not work upon initial clone from original source
 set(CMAKE_CXX_FLAGS ${ADDITIONAL_CMAKE_CXX_FLAGS} "-O3 -msse2 -msse3 -Wall -std=c++11 -DSHADER_DIR=${efusion_SHADER_DIR}")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -std=c++11 -DSHADER_DIR=${efusion_SHADER_DIR}")
   
@@ -106,7 +73,7 @@ target_link_libraries(efusion
                       ${Eigen_LIBRARIES}
                       ${Pangolin_LIBRARIES}
                       ${CUDA_LIBRARIES}
-                      ${SuiteSparse_LIBRARIES} # was SUITESPARSE_LIBRARIES
+                      ${SUITESPARSE_LIBRARIES}
 					  ${EXTRA_WINDOWS_LIBS}
 )
 
