@@ -39,6 +39,7 @@ class GPUTexture
 
         virtual ~GPUTexture();
 
+        //possible texture labels. used throughout src
         EFUSION_API static const std::string RGB, DEPTH_RAW, DEPTH_FILTERED, DEPTH_METRIC, DEPTH_METRIC_FILTERED, DEPTH_NORM;
 
         pangolin::GlTexture * texture;
