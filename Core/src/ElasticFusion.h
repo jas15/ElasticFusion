@@ -281,6 +281,11 @@ class ElasticFusion
 
         bool denseEnough(const Img<Eigen::Matrix<unsigned char, 3, 1>> & img);
 
+        void processInitialFrame();
+        void processSequentialFrame(const Eigen::Matrix4f * inPose,
+                                    const float weightMultiplier,
+                                    const bool bootstrap);
+
         void processFerns();
 
         Eigen::Vector3f rodrigues2(const Eigen::Matrix3f& matrix);
