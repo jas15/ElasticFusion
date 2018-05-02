@@ -115,8 +115,8 @@ ElasticFusion::~ElasticFusion()
   {
     std::stringstream strs;
 
-    std::string poseLogTimesStr = iclnum ? (double)poseLogTimes.at(i) : (double)poseLogTimes.at(i) / 1000000.0;
-    strs << std::setprecision(6) << std::fixed << poseLogTimesStr << " ";
+    double poseLogTimesDbl = iclnuim ? (double)poseLogTimes.at(i) : (double)poseLogTimes.at(i) / 1000000.0;
+    strs << std::setprecision(6) << std::fixed << poseLogTimesDbl << " ";
 
     //if(iclnuim)
     //{
@@ -231,15 +231,15 @@ void ElasticFusion::createCompute()
                                                                textures[GPUTexture::DEPTH_METRIC_FILTERED]->texture);
 }
 
-FeedbackBuffer ElasticFusion::helperComputeFeedbackBuffers() {
+FeedbackBuffer * ElasticFusion::helperCreateFeedbackBuffers() {
   return new FeedbackBuffer(loadProgramGeomFromFile("vertex_feedback.vert", "vertex_feedback.geom"));
 }
 
 //TODO see if this builds. definitely should but been a while since c++
 void ElasticFusion::createFeedbackBuffers()
 {
-  feedbackBuffers[FeedbackBuffer::RAW]      = helperComputeFeedbackBuffers();
-  feedbackBuffers[FeedbackBuffer::FILTERED] = helperComputeFeedbackBuffers();
+  feedbackBuffers[FeedbackBuffer::RAW]      = helperCreateFeedbackBuffers();
+  feedbackBuffers[FeedbackBuffer::FILTERED] = helperCreateFeedbackBuffers();
   //feedbackBuffers[FeedbackBuffer::RAW] = new FeedbackBuffer(loadProgramGeomFromFile("vertex_feedback.vert", "vertex_feedback.geom"));
   //feedbackBuffers[FeedbackBuffer::FILTERED] = new FeedbackBuffer(loadProgramGeomFromFile("vertex_feedback.vert", "vertex_feedback.geom"));
 }
@@ -564,7 +564,7 @@ void ElasticFusion::processFrame(const unsigned char * rgb,
 
         //TODO this is HUUUUGE each and every time
         //print to file the total count of this bc it will be huuuuge
-        int currCountLoop = 0
+        int currCountLoop = 0;
         for(int i = 0; i < consBuff.cols; i++)
         {
           for(int j = 0; j < consBuff.rows; j++)

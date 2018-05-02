@@ -274,6 +274,7 @@ class ElasticFusion
         void createTextures();
         void createCompute();
         void createFeedbackBuffers();
+        FeedbackBuffer * helperCreateFeedbackBuffers();
 
         void filterDepth();
         void metriciseDepth();
