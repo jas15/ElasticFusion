@@ -17,6 +17,7 @@
  */
  
 #include "ElasticFusion.h"
+#include <stdio.h>
 
 ElasticFusion::ElasticFusion(const int timeDelta,
                              const int countThresh,
@@ -486,13 +487,11 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
           fernAccepted = true;
         }
       }
+    } //end of ferns.lastClosest
 
-    }
-
-    //CLOSELOOPS TRUE
     //If we didn't match to a fern
     //NOTE changed the order of this. was rawGraph @ end
-    if(rawGraph.size() == 0 && !lost)
+    if(rawGraph.size() == 0 && !lost) //CLOSELOOPS TRUE
     {
       //Only predict old view, since we just predicted the current view for the ferns (which failed!)
       TICK("IndexMap::INACTIVE");
@@ -518,12 +517,12 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
       Eigen::Matrix<float, 3, 3, Eigen::RowMajor> rot = currPose.topLeftCorner(3, 3);
 
       modelToModel.getIncrementalTransformation(trans,
-          rot,
-          false,
-          10,
-          pyramid,
-          fastOdom,
-          false);
+                                                rot,
+                                                false,
+                                                10,
+                                                pyramid,
+                                                fastOdom,
+                                                false);
 
       Eigen::MatrixXd covar = modelToModel.getCovariance();
       bool covOk = true;
@@ -551,7 +550,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
 
         //TODO this is HUUUUGE each and every time
         //print to file the total count of this bc it will be huuuuge
-        int currCountLoop = 0;
+        long long currCountLoop = 0;
         for(int i = 0; i < consBuff.cols; i++)
         {
           for(int j = 0; j < consBuff.rows; j++)
@@ -582,6 +581,8 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
           }
         }
         //TODO print currCountLoop
+        //okay so this doesn't print out and i actually can't work out why not
+        printf("Count loop = %llu", currCountLoop);
 
         std::vector<Deformation::Constraint> newRelativeCons;
 
@@ -598,16 +599,11 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
           {
             relativeCons.push_back(newRelativeCons.at(i));
           }
-        }
-      }
+        }//end of localDeformation.constrain
+      }//end of covOK
+    }//end of rawGraph.size
+  }//end of closeLoops
 
-    }
-  }
-
-
-
-
-  //NOTHING TO DO WITH CLOSELOOPS
   //TODO lazy eval
   if(!rgbOnly && trackingOk && !lost)
   {

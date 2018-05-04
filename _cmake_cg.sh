@@ -1,11 +1,13 @@
 #!/bin/bash
 
 cd Core/build/
-make clean
+rm -rf *
+cmake ../src
 make -j4
 
 cd ../../
 
 cd GUI/build/
-make clean
+rm -rf *
+cmake ../src
 make -j4
