@@ -112,6 +112,9 @@ ElasticFusion::~ElasticFusion()
   std::ofstream f;
   f.open(fname.c_str(), std::fstream::out);
 
+  //NOTE poseGraph is a vector
+  printf("Pose graph size = %d", poseGraph.size()); //TODO remove
+
   for(size_t i = 0; i < poseGraph.size(); i++)
   {
     std::stringstream strs;
@@ -119,20 +122,16 @@ ElasticFusion::~ElasticFusion()
     double poseLogTimesDbl = iclnuim ? (double)poseLogTimes.at(i) : (double)poseLogTimes.at(i) / 1000000.0;
     strs << std::setprecision(6) << std::fixed << poseLogTimesDbl << " ";
 
-    //if(iclnuim)
-    //{
-    //  strs << std::setprecision(6) << std::fixed << (double)poseLogTimes.at(i) << " ";
-    //}
-    //else
-    //{
-    //  strs << std::setprecision(6) << std::fixed << (double)poseLogTimes.at(i) / 1000000.0 << " ";
-    //}
-
-    Eigen::Vector3f trans = poseGraph.at(i).second.topRightCorner(3, 1);
-    Eigen::Matrix3f rot = poseGraph.at(i).second.topLeftCorner(3, 3);
+    //NOTE these are just getters right? they don't really do any comp
+    //second == second in pair (which is type Matrix4f) TODO check ok assigning like (), remove
+    //Eigen::Vector3f trans = poseGraph.at(i).second.topRightCorner(3, 1);
+    //Eigen::Matrix3f rot = poseGraph.at(i).second.topLeftCorner(3, 3);
+    Eigen::Vector3f trans (poseGraph.at(i).second.topRightCorner(3, 1));
+    Eigen::Matrix3f rot   (poseGraph.at(i).second.topLeftCorner(3, 3));
 
     f << strs.str() << trans(0) << " " << trans(1) << " " << trans(2) << " ";
 
+    //sets currentCameraRotation = rot ? YEP basically doesn't give it an empty val to begin
     Eigen::Quaternionf currentCameraRotation(rot);
 
     f << currentCameraRotation.x() << " " << currentCameraRotation.y() << " " << currentCameraRotation.z() << " " << currentCameraRotation.w() << "\n";
@@ -714,6 +713,7 @@ void ElasticFusion::processFrame(const unsigned char * rgb,
 void ElasticFusion::processFerns()
 {
   TICK("Ferns::addFrame");
+  //TODO inspect this func
   ferns.addFrame(&fillIn.imageTexture, &fillIn.vertexTexture, &fillIn.normalTexture, currPose, tick, fernThresh);
   TOCK("Ferns::addFrame");
 }
@@ -723,30 +723,40 @@ void ElasticFusion::predict()
   TICK("IndexMap::ACTIVE");
 
   //TODO could change this if block to lastFrameRecovery ? 0 : tick
-  if(lastFrameRecovery)
-  {
-    indexMap.combinedPredict(currPose,
-                             globalModel.model(),
-                             maxDepthProcessed,
-                             confidenceThreshold,
-                             0,
-                             tick,
-                             timeDelta,
-                             IndexMap::ACTIVE);
-  }
-  else
-  {
-    indexMap.combinedPredict(currPose,
-                             globalModel.model(),
-                             maxDepthProcessed,
-                             confidenceThreshold,
-                             tick,
-                             tick,
-                             timeDelta,
-                             IndexMap::ACTIVE);
-  }
+  indexMap.combinedPredict(currPose,
+                            globalModel.model(),
+                            maxDepthProcessed,
+                            confidenceThreshold,
+                            lastFrameRecovery ? 0 : tick,
+                            tick,
+                            timeDelta,
+                            IndexMap::ACTIVE);
+
+  //if(lastFrameRecovery)
+  //{
+  //  indexMap.combinedPredict(currPose,
+  //                           globalModel.model(),
+  //                           maxDepthProcessed,
+  //                           confidenceThreshold,
+  //                           0,
+  //                           tick,
+  //                           timeDelta,
+  //                           IndexMap::ACTIVE);
+  //}
+  //else
+  //{
+  //  indexMap.combinedPredict(currPose,
+  //                           globalModel.model(),
+  //                           maxDepthProcessed,
+  //                           confidenceThreshold,
+  //                           tick,
+  //                           tick,
+  //                           timeDelta,
+  //                           IndexMap::ACTIVE);
+  //}
 
   TICK("FillIn");
+  //TODO what does this do
   fillIn.vertex(indexMap.vertexTex(), textures[GPUTexture::DEPTH_FILTERED], lost);
   fillIn.normal(indexMap.normalTex(), textures[GPUTexture::DEPTH_FILTERED], lost);
   fillIn.image(indexMap.imageTex(), textures[GPUTexture::RGB], lost || frameToFrameRGB);
@@ -759,6 +769,7 @@ void ElasticFusion::metriciseDepth()
 {
   std::vector<Uniform> uniforms;
 
+  //NOTE there are a lot of push_back calls - what is being stored in here ? might be large data == slow
   uniforms.push_back(Uniform("maxD", depthCutoff));
 
   computePacks[ComputePack::METRIC]->compute(textures[GPUTexture::DEPTH_RAW]->texture, &uniforms);
@@ -769,6 +780,7 @@ void ElasticFusion::filterDepth()
 {
   std::vector<Uniform> uniforms;
 
+  //NOTE again push_back dead af can't this be done a different way ?
   uniforms.push_back(Uniform("cols", (float)Resolution::getInstance().cols()));
   uniforms.push_back(Uniform("rows", (float)Resolution::getInstance().rows()));
   uniforms.push_back(Uniform("maxD", depthCutoff));
@@ -780,6 +792,7 @@ void ElasticFusion::normaliseDepth(const float & minVal, const float & maxVal)
 {
   std::vector<Uniform> uniforms;
 
+  //NOTE again push_back dead af can't this be done a different way ?
   uniforms.push_back(Uniform("maxVal", maxVal * 1000.f));
   uniforms.push_back(Uniform("minVal", minVal * 1000.f));
 
@@ -889,6 +902,7 @@ void ElasticFusion::savePly()
   delete [] mapData;
 }
 
+//TODO understand these tings. Probably v fast but might not be...
 Eigen::Vector3f ElasticFusion::rodrigues2(const Eigen::Matrix3f& matrix)
 {
   Eigen::JacobiSVD<Eigen::Matrix3f> svd(matrix, Eigen::ComputeFullV | Eigen::ComputeFullU);
@@ -936,7 +950,10 @@ Eigen::Vector3f ElasticFusion::rodrigues2(const Eigen::Matrix3f& matrix)
   return Eigen::Vector3d(rx, ry, rz).cast<float>();
 }
 
-//Sad times ahead (NOTE what is this hahahhaha someone didn't like the project)
+//NOTE below here are simple get functions --------------------------------------------------------------
+
+//Sad times ahead 
+//(NOTE what is this comment above hahahhaha someone didn't like the project)
 IndexMap & ElasticFusion::getIndexMap()
 {
   return indexMap;

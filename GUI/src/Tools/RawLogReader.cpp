@@ -59,9 +59,14 @@ void RawLogReader::getBack()
 
 void RawLogReader::getNext()
 {
+  //TODO what does this do
+
+  //NOTE filePointers is a stack boi. this is like 0 time
     filePointers.push(ftell(fp));
 
+    TICK("GettingCore");
     getCore();
+    TOCK("GettingCore");
 }
 
 void RawLogReader::getCore()
@@ -83,28 +88,42 @@ void RawLogReader::getCore()
         assert(tmp);
     }
 
+    //from here to TOCKC is loong
     if(depthSize == numPixels * 2)
     {
+      TICK("CoreBi");
         memcpy(&decompressionBufferDepth[0], depthReadBuffer, numPixels * 2);
+        TOCK("CoreBi");
     }
     else
     {
+      TICK("CoreBii"); //currently going through here with klg file loading. its sslooow
         unsigned long decompLength = numPixels * 2;
         uncompress(&decompressionBufferDepth[0], (unsigned long *)&decompLength, (const Bytef *)depthReadBuffer, depthSize);
+        TOCK("CoreBii");
     }
 
     if(imageSize == numPixels * 3)
     {
+      TICK("CoreCi");
         memcpy(&decompressionBufferImage[0], imageReadBuffer, numPixels * 3);
+        TOCK("CoreCi");
     }
     else if(imageSize > 0)
     {
+      TICK("CoreCii");//currently going through here with klg file loading. its sslooow
+      //jpeg = JPEGLoader
+      //looks like I shouldn't be changing any of this waaaaaaaaaaah
         jpeg.readData(imageReadBuffer, imageSize, (unsigned char *)&decompressionBufferImage[0]);
+        TOCK("CoreCii");
     }
     else
     {
+      TICK("CoreCiii");
         memset(&decompressionBufferImage[0], 0, numPixels * 3);
+        TOCK("CoreCiii");
     }
+    //down to here (slow)
 
     depth = (unsigned short *)decompressionBufferDepth;
     rgb = (unsigned char *)&decompressionBufferImage[0];
