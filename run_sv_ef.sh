@@ -1,6 +1,6 @@
 #!/bin/bash
 
-./cg_build.sh
+#Simply run StopwatchViewer and EF
 
 ./../Stopwatch/build/StopwatchViewer &
 

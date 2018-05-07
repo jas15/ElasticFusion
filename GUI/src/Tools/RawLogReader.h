@@ -25,6 +25,7 @@
 
 #include "LogReader.h"
 
+//NOTE the uncompress funcion from .cpp line ~105 is from zlib !
 #include <cassert>
 #include <zlib.h>
 #include <iostream>

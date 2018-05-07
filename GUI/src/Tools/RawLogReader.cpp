@@ -71,6 +71,7 @@ void RawLogReader::getNext()
 
 void RawLogReader::getCore()
 {
+  //TODO improve for LogRead
     auto tmp = fread(&timestamp,sizeof(int64_t),1,fp);
     assert(tmp);
 
@@ -99,6 +100,9 @@ void RawLogReader::getCore()
     {
       TICK("CoreBii"); //currently going through here with klg file loading. its sslooow
         unsigned long decompLength = numPixels * 2;
+        //NOTE this is from one of the imports in the .h file that isn't actually part of the project
+        //maybe there's an alternative? there is talk of it through goog searches
+        //see zlib.net/manual.html for more info on function
         uncompress(&decompressionBufferDepth[0], (unsigned long *)&decompLength, (const Bytef *)depthReadBuffer, depthSize);
         TOCK("CoreBii");
     }
