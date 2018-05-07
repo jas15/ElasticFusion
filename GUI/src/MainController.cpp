@@ -296,8 +296,10 @@ void MainController::run()
       eFusion->predict();
     }
 
+    
     TICK("GUI");
 
+    /*
     if(gui->followPose->Get())
     {
       pangolin::OpenGlMatrix mv;
@@ -553,9 +555,12 @@ void MainController::run()
         static_cast<LiveLogReader *>(logReader)->setAuto(last);
       }
     }
+    */
 
+    //NOTE still need this to push the timings
     Stopwatch::getInstance().sendAll();
 
+    /*
     if(resetButton)
     {
       break;
@@ -565,6 +570,7 @@ void MainController::run()
     {
       eFusion->savePly();
     }
+    */
 
     TOCK("GUI");
   }
