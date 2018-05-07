@@ -326,6 +326,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
     Eigen::Matrix<float, 3, 3, Eigen::RowMajor> rot = currPose.topLeftCorner(3, 3);
 
     TICK("odom");
+    //NOTE function in Utils/RGBDOdometry
     frameToModel.getIncrementalTransformation(trans,
         rot,
         rgbOnly,
