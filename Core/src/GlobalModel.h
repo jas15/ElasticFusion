@@ -126,6 +126,18 @@ class GlobalModel
         pangolin::GlFramebuffer frameBuffer;
         GLuint uvo;
         int uvSize;
+
+        void fuseData(const Eigen::Matrix4f & pose,
+            const int & time,
+            GPUTexture * rgb,
+            GPUTexture * depthRaw,
+            GPUTexture * depthFiltered,
+            GPUTexture * indexMap,
+            GPUTexture * vertConfMap,
+            GPUTexture * colorTimeMap,
+            GPUTexture * normRadMap,
+            const float depthCutoff,
+            const float weighting);
 };
 
 #endif /* GLOBALMODEL_H_ */
