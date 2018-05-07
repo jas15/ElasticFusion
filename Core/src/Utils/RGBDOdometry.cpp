@@ -50,7 +50,8 @@ RGBDOdometry::RGBDOdometry(int width,
 
   for(int i = 0; i < NUM_PYRS; i++)
   {
-    int2 nextDim = {height >> i, width >> i};
+    //int2 nextDim = {height >> i, width >> i};
+    int2 nextDim ({height >> i, width >> i});
     pyrDims.push_back(nextDim);
   }
 
@@ -89,8 +90,10 @@ RGBDOdometry::RGBDOdometry(int width,
 
   for (int i = 0; i < NUM_PYRS; ++i)
   {
-    int pyr_rows = height >> i;
-    int pyr_cols = width >> i;
+    //int pyr_rows = height >> i;
+    int pyr_rows (height >> i);
+    //int pyr_cols = width >> i;
+    int pyr_cols (width >> i);
 
     depth_tmp[i].create (pyr_rows, pyr_cols);
 
@@ -191,11 +194,15 @@ void RGBDOdometry::initICPModel(GPUTexture * predictedVertices,
     resizeNMap(nmaps_g_prev_[i - 1], nmaps_g_prev_[i]);
   }
 
-  Eigen::Matrix<float, 3, 3, Eigen::RowMajor> Rcam = modelPose.topLeftCorner(3, 3);
-  Eigen::Vector3f tcam = modelPose.topRightCorner(3, 1);
+  //Eigen::Matrix<float, 3, 3, Eigen::RowMajor> Rcam = modelPose.topLeftCorner(3, 3);
+  Eigen::Matrix<float, 3, 3, Eigen::RowMajor> Rcam (modelPose.topLeftCorner(3, 3));
+  //Eigen::Vector3f tcam = modelPose.topRightCorner(3, 1);
+  Eigen::Vector3f tcam (modelPose.topRightCorner(3, 1));
 
-  mat33 device_Rcam = Rcam;
-  float3 device_tcam = *reinterpret_cast<float3*>(tcam.data());
+  //mat33 device_Rcam = Rcam;
+  mat33 device_Rcam (Rcam);
+  //float3 device_tcam = *reinterpret_cast<float3*>(tcam.data());
+  float3 device_tcam (*reinterpret_cast<float3*>(tcam.data()));
 
   for(int i = 0; i < NUM_PYRS; ++i)
   {
@@ -273,14 +280,20 @@ void RGBDOdometry::getIncrementalTransformation(Eigen::Vector3f & trans,
                                                 const bool & so3)
 {
   //TODO this is the big part of the main prog
-  bool icp = !rgbOnly && icpWeight > 0;
-  bool rgb = rgbOnly || icpWeight < 100;
+  //bool icp = !rgbOnly && icpWeight > 0;
+  bool icp (!rgbOnly && icpWeight > 0);
+  //bool rgb = rgbOnly || icpWeight < 100;
+  bool rgb (rgbOnly || icpWeight < 100);
 
-  Eigen::Matrix<float, 3, 3, Eigen::RowMajor> Rprev = rot;
-  Eigen::Vector3f tprev = trans;
+  //Eigen::Matrix<float, 3, 3, Eigen::RowMajor> Rprev = rot;
+  Eigen::Matrix<float, 3, 3, Eigen::RowMajor> Rprev (rot);
+  //Eigen::Vector3f tprev = trans;
+  Eigen::Vector3f tprev (trans);
 
-  Eigen::Matrix<float, 3, 3, Eigen::RowMajor> Rcurr = Rprev;
-  Eigen::Vector3f tcurr = tprev;
+  //Eigen::Matrix<float, 3, 3, Eigen::RowMajor> Rcurr = Rprev;
+  Eigen::Matrix<float, 3, 3, Eigen::RowMajor> Rcurr (Rprev);
+  //Eigen::Vector3f tcurr = tprev;
+  Eigen::Vector3f tcurr (tprev);
 
   TICK("rgbLoop");
   if(rgb)
@@ -300,15 +313,19 @@ void RGBDOdometry::getIncrementalTransformation(Eigen::Vector3f & trans,
   }
   TOCK("rgbLoop");
 
-  Eigen::Matrix<double, 3, 3, Eigen::RowMajor> resultR = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>::Identity();
+  //Eigen::Matrix<double, 3, 3, Eigen::RowMajor> resultR = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>::Identity();
+  Eigen::Matrix<double, 3, 3, Eigen::RowMajor> resultR (Eigen::Matrix<double, 3, 3, Eigen::RowMajor>::Identity());
 
   if(so3)
   {
-    int pyramidLevel = 2;
+    //int pyramidLevel = 2;
+    int pyramidLevel (2);
 
-    Eigen::Matrix<float, 3, 3, Eigen::RowMajor> R_lr = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>::Identity();
+    //Eigen::Matrix<float, 3, 3, Eigen::RowMajor> R_lr = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>::Identity();
+    Eigen::Matrix<float, 3, 3, Eigen::RowMajor> R_lr (Eigen::Matrix<float, 3, 3, Eigen::RowMajor>::Identity());
 
-    Eigen::Matrix<double, 3, 3, Eigen::RowMajor> K = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>::Zero();
+    //Eigen::Matrix<double, 3, 3, Eigen::RowMajor> K = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>::Zero();
+    Eigen::Matrix<double, 3, 3, Eigen::RowMajor> K (Eigen::Matrix<double, 3, 3, Eigen::RowMajor>::Zero());
 
     K(0, 0) = intr(pyramidLevel).fx;
     K(1, 1) = intr(pyramidLevel).fy;
@@ -316,10 +333,13 @@ void RGBDOdometry::getIncrementalTransformation(Eigen::Vector3f & trans,
     K(1, 2) = intr(pyramidLevel).cy;
     K(2, 2) = 1;
 
-    float lastError = std::numeric_limits<float>::max() / 2;
-    float lastCount = std::numeric_limits<float>::max() / 2;
+    //float lastError = std::numeric_limits<float>::max() / 2;
+    float lastError (std::numeric_limits<float>::max() / 2);
+    //float lastCount = std::numeric_limits<float>::max() / 2;
+    float lastCount (std::numeric_limits<float>::max() / 2);
 
-    Eigen::Matrix<double, 3, 3, Eigen::RowMajor> lastResultR = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>::Identity();
+    //Eigen::Matrix<double, 3, 3, Eigen::RowMajor> lastResultR = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>::Identity();
+    Eigen::Matrix<double, 3, 3, Eigen::RowMajor> lastResultR (Eigen::Matrix<double, 3, 3, Eigen::RowMajor>::Identity());
 
     TICK("so3"); 
     //NOTE worst part is actually within the so3Step TICK.
@@ -424,7 +444,8 @@ void RGBDOdometry::getIncrementalTransformation(Eigen::Vector3f & trans,
   mat33 device_Rprev_inv = Rprev_inv;
   float3 device_tprev = *reinterpret_cast<float3*>(tprev.data());
 
-  Eigen::Matrix<double, 4, 4, Eigen::RowMajor> resultRt = Eigen::Matrix<double, 4, 4, Eigen::RowMajor>::Identity();
+  //Eigen::Matrix<double, 4, 4, Eigen::RowMajor> resultRt = Eigen::Matrix<double, 4, 4, Eigen::RowMajor>::Identity();
+  Eigen::Matrix<double, 4, 4, Eigen::RowMajor> resultRt (Eigen::Matrix<double, 4, 4, Eigen::RowMajor>::Identity());
 
   if(so3)
   {
@@ -444,7 +465,8 @@ void RGBDOdometry::getIncrementalTransformation(Eigen::Vector3f & trans,
       projectToPointCloud(lastDepth[i], pointClouds[i], intr, i);
     }
 
-    Eigen::Matrix<double, 3, 3, Eigen::RowMajor> K = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>::Zero();
+    //Eigen::Matrix<double, 3, 3, Eigen::RowMajor> K = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>::Zero();
+    Eigen::Matrix<double, 3, 3, Eigen::RowMajor> K (Eigen::Matrix<double, 3, 3, Eigen::RowMajor>::Zero());
 
     K(0, 0) = intr(i).fx;
     K(1, 1) = intr(i).fy;
@@ -456,20 +478,27 @@ void RGBDOdometry::getIncrementalTransformation(Eigen::Vector3f & trans,
 
     for(int j = 0; j < iterations[i]; j++)
     {
-      Eigen::Matrix<double, 4, 4, Eigen::RowMajor> Rt = resultRt.inverse();
+      //Eigen::Matrix<double, 4, 4, Eigen::RowMajor> Rt = resultRt.inverse();
+      Eigen::Matrix<double, 4, 4, Eigen::RowMajor> Rt (resultRt.inverse());
 
-      Eigen::Matrix<double, 3, 3, Eigen::RowMajor> R = Rt.topLeftCorner(3, 3);
+      //Eigen::Matrix<double, 3, 3, Eigen::RowMajor> R = Rt.topLeftCorner(3, 3);
+      Eigen::Matrix<double, 3, 3, Eigen::RowMajor> R (Rt.topLeftCorner(3, 3));
 
-      Eigen::Matrix<double, 3, 3, Eigen::RowMajor> KRK_inv = K * R * K.inverse();
+      //Eigen::Matrix<double, 3, 3, Eigen::RowMajor> KRK_inv = K * R * K.inverse();
+      Eigen::Matrix<double, 3, 3, Eigen::RowMajor> KRK_inv (K * R * K.inverse());
       mat33 krkInv;
       memcpy(&krkInv.data[0], KRK_inv.cast<float>().eval().data(), sizeof(mat33));
 
-      Eigen::Vector3d Kt = Rt.topRightCorner(3, 1);
+      //Eigen::Vector3d Kt = Rt.topRightCorner(3, 1);
+      Eigen::Vector3d Kt (Rt.topRightCorner(3, 1));
       Kt = K * Kt;
-      float3 kt = {(float)Kt(0), (float)Kt(1), (float)Kt(2)};
+      //float3 kt = {(float)Kt(0), (float)Kt(1), (float)Kt(2)};
+      float3 kt ({(float)Kt(0), (float)Kt(1), (float)Kt(2)});
 
-      int sigma = 0;
-      int rgbSize = 0;
+      //int sigma = 0;
+      int sigma (0);
+      //int rgbSize = 0;
+      int rgbSize (0);
 
       if(rgb)
       {
@@ -493,8 +522,10 @@ void RGBDOdometry::getIncrementalTransformation(Eigen::Vector3f & trans,
         TOCK("computeRgbResidual");
       }
 
-      float sigmaVal = std::sqrt((float)sigma / rgbSize == 0 ? 1 : rgbSize);
-      float rgbError = std::sqrt(sigma) / (rgbSize == 0 ? 1 : rgbSize);
+      //float sigmaVal = std::sqrt((float)sigma / rgbSize == 0 ? 1 : rgbSize);
+      float sigmaVal (std::sqrt((float)sigma / rgbSize == 0 ? 1 : rgbSize));
+      //float rgbError = std::sqrt(sigma) / (rgbSize == 0 ? 1 : rgbSize);
+      float rgbError (std::sqrt(sigma) / (rgbSize == 0 ? 1 : rgbSize));
 
       if(rgbOnly && rgbError > lastRGBError)
       {
@@ -512,14 +543,20 @@ void RGBDOdometry::getIncrementalTransformation(Eigen::Vector3f & trans,
       Eigen::Matrix<float, 6, 6, Eigen::RowMajor> A_icp;
       Eigen::Matrix<float, 6, 1> b_icp;
 
-      mat33 device_Rcurr = Rcurr;
-      float3 device_tcurr = *reinterpret_cast<float3*>(tcurr.data());
+      //mat33 device_Rcurr = Rcurr;
+      mat33 device_Rcurr (Rcurr);
+      //float3 device_tcurr = *reinterpret_cast<float3*>(tcurr.data());
+      float3 device_tcurr (*reinterpret_cast<float3*>(tcurr.data()));
 
-      DeviceArray2D<float>& vmap_curr = vmaps_curr_[i];
-      DeviceArray2D<float>& nmap_curr = nmaps_curr_[i];
+      //DeviceArray2D<float>& vmap_curr = vmaps_curr_[i];
+      DeviceArray2D<float>& vmap_curr (vmaps_curr_[i]);
+      //DeviceArray2D<float>& nmap_curr = nmaps_curr_[i];
+      DeviceArray2D<float>& nmap_curr (nmaps_curr_[i]);
 
-      DeviceArray2D<float>& vmap_g_prev = vmaps_g_prev_[i];
-      DeviceArray2D<float>& nmap_g_prev = nmaps_g_prev_[i];
+      //DeviceArray2D<float>& vmap_g_prev = vmaps_g_prev_[i];
+      DeviceArray2D<float>& vmap_g_prev (vmaps_g_prev_[i]);
+      //DeviceArray2D<float>& nmap_g_prev = nmaps_g_prev_[i];
+      DeviceArray2D<float>& nmap_g_prev (nmaps_g_prev_[i]);
 
       float residual[2];
 
@@ -574,14 +611,19 @@ void RGBDOdometry::getIncrementalTransformation(Eigen::Vector3f & trans,
       }
 
       Eigen::Matrix<double, 6, 1> result;
-      Eigen::Matrix<double, 6, 6, Eigen::RowMajor> dA_rgbd = A_rgbd.cast<double>();
-      Eigen::Matrix<double, 6, 6, Eigen::RowMajor> dA_icp = A_icp.cast<double>();
-      Eigen::Matrix<double, 6, 1> db_rgbd = b_rgbd.cast<double>();
-      Eigen::Matrix<double, 6, 1> db_icp = b_icp.cast<double>();
+      //Eigen::Matrix<double, 6, 6, Eigen::RowMajor> dA_rgbd = A_rgbd.cast<double>();
+      Eigen::Matrix<double, 6, 6, Eigen::RowMajor> dA_rgbd (A_rgbd.cast<double>());
+      //Eigen::Matrix<double, 6, 6, Eigen::RowMajor> dA_icp = A_icp.cast<double>();
+      Eigen::Matrix<double, 6, 6, Eigen::RowMajor> dA_icp (A_icp.cast<double>());
+      //Eigen::Matrix<double, 6, 1> db_rgbd = b_rgbd.cast<double>();
+      Eigen::Matrix<double, 6, 1> db_rgbd (b_rgbd.cast<double>());
+      //Eigen::Matrix<double, 6, 1> db_icp = b_icp.cast<double>();
+      Eigen::Matrix<double, 6, 1> db_icp (b_icp.cast<double>());
 
       if(icp && rgb)
       {
-        double w = icpWeight;
+        //double w = icpWeight;
+        double w (icpWeight);
         lastA = dA_rgbd + w * w * dA_icp;
         lastb = db_rgbd + w * db_icp;
         result = lastA.ldlt().solve(lastb);
