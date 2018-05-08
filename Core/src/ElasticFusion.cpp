@@ -18,6 +18,8 @@
  
 #include "ElasticFusion.h"
 #include <stdio.h>
+#include <iostream>
+#include <fstream>
 
 ElasticFusion::ElasticFusion(const int timeDelta,
                              const int countThresh,
@@ -113,7 +115,7 @@ ElasticFusion::~ElasticFusion()
   f.open(fname.c_str(), std::fstream::out);
 
   //NOTE poseGraph is a vector
-  printf("Pose graph size = %d", poseGraph.size()); //TODO remove
+  //printf("Pose graph size = %d", poseGraph.size()); //TODO remove
 
   for(size_t i = 0; i < poseGraph.size(); i++)
   {
@@ -524,8 +526,10 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
     //NOTE changed the order of this. was rawGraph @ end
     if(rawGraph.size() == 0 && !lost) //CLOSELOOPS TRUE
     {
+      TICK("closeLoops bit"); //~80ms
+      //NOTE goes in here
       //Only predict old view, since we just predicted the current view for the ferns (which failed!)
-      TICK("IndexMap::INACTIVE");
+      TICK("IndexMap::INACTIVE"); //~5ms
       indexMap.combinedPredict(currPose,
           globalModel.model(),
           maxDepthProcessed,
@@ -536,6 +540,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
           IndexMap::INACTIVE);
       TOCK("IndexMap::INACTIVE");
 
+      TICK("closeLoops::1"); //~10ms
       //WARNING initICP* must be called before initRGB*
       //TODO pretty sure these 4 lines were called somewhere else ? common code pull it out
       modelToModel.initICPModel(indexMap.oldVertexTex(), indexMap.oldNormalTex(), maxDepthProcessed, currPose);
@@ -546,7 +551,9 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
 
       Eigen::Vector3f trans = currPose.topRightCorner(3, 1);
       Eigen::Matrix<float, 3, 3, Eigen::RowMajor> rot = currPose.topLeftCorner(3, 3);
+      TOCK("closeLoops::1");
 
+      TICK("closeLoops::2"); //~60ms
       modelToModel.getIncrementalTransformation(trans,
                                                 rot,
                                                 false,
@@ -554,12 +561,13 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
                                                 pyramid,
                                                 fastOdom,
                                                 false);
+      TOCK("closeLoops::2");
 
       Eigen::MatrixXd covar = modelToModel.getCovariance();
       bool covOk = true;
 
-      TICK("covar");
       //TODO for vs while loop speed ??
+      //NOTE improved wooo
       int i (0);
       while (covOk && i < 6)
       {
@@ -574,7 +582,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
       //    break;
       //  }
       //}
-      TOCK("covar");
+      TOCK("closeLoops bit");
 
       Eigen::Matrix4f estPose = Eigen::Matrix4f::Identity();
 
@@ -584,12 +592,13 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
       //TODO lazy eval?
       if(covOk && modelToModel.lastICPCount > icpCountThresh && modelToModel.lastICPError < icpErrThresh)
       {
+        //NOTE doesn't go into here !!!
         resize.vertex(indexMap.vertexTex(), consBuff);
         resize.time(indexMap.oldTimeTex(), timesBuff);
 
-        //TODO this is HUUUUGE each and every time
-        //print to file the total count of this bc it will be huuuuge
-        long long currCountLoop = 0;
+        //TODO this is HUUUUGE each and every time - dont think it can change tho wah
+        int currCountLoop = 0;
+        int ifloop (0);
         for(int i = 0; i < consBuff.cols; i++)
         {
           for(int j = 0; j < consBuff.rows; j++)
@@ -599,6 +608,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
                 consBuff.at<Eigen::Vector4f>(j, i)(2) < maxDepthProcessed &&
                 timesBuff.at<unsigned short>(j, i) > 0)
             {
+              ifloop++;
               Eigen::Vector4f worldRawPoint = currPose * Eigen::Vector4f(consBuff.at<Eigen::Vector4f>(j, i)(0),
                   consBuff.at<Eigen::Vector4f>(j, i)(1),
                   consBuff.at<Eigen::Vector4f>(j, i)(2),
@@ -619,9 +629,11 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
             }
           }
         }
+
         //TODO print currCountLoop
-        //okay so this doesn't print out and i actually can't work out why not
-        printf("Count loop = %llu", currCountLoop);
+        //jokes it doesnt even go here ???
+        printf("Count loop = %d\n", currCountLoop);
+        printf("Ifs in loop = %d\n", ifloop);
 
         std::vector<Deformation::Constraint> newRelativeCons;
 
