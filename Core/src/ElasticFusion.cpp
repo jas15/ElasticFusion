@@ -123,9 +123,7 @@ ElasticFusion::~ElasticFusion()
     strs << std::setprecision(6) << std::fixed << poseLogTimesDbl << " ";
 
     //NOTE these are just getters right? they don't really do any comp
-    //second == second in pair (which is type Matrix4f) TODO check ok assigning like (), remove
-    //Eigen::Vector3f trans = poseGraph.at(i).second.topRightCorner(3, 1);
-    //Eigen::Matrix3f rot = poseGraph.at(i).second.topLeftCorner(3, 3);
+    //second == second in pair (which is type Matrix4f)
     Eigen::Vector3f trans (poseGraph.at(i).second.topRightCorner(3, 1));
     Eigen::Matrix3f rot   (poseGraph.at(i).second.topLeftCorner(3, 3));
 
@@ -560,15 +558,23 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
       Eigen::MatrixXd covar = modelToModel.getCovariance();
       bool covOk = true;
 
+      TICK("covar");
       //TODO for vs while loop speed ??
-      for(int i = 0; i < 6; i++)
+      int i (0);
+      while (covOk && i < 6)
       {
-        if(covar(i, i) > covThresh)
-        {
-          covOk = false;
-          break;
-        }
+        covOk = covar(i,i) > covThresh;
+        i++;
       }
+      //for(int i = 0; i < 6; i++)
+      //{
+      //  if(covar(i, i) > covThresh)
+      //  {
+      //    covOk = false;
+      //    break;
+      //  }
+      //}
+      TOCK("covar");
 
       Eigen::Matrix4f estPose = Eigen::Matrix4f::Identity();
 
