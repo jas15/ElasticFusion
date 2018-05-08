@@ -262,20 +262,53 @@ void ElasticFusion::computeFeedbackBuffers()
 
 bool ElasticFusion::denseEnough(const Img<Eigen::Matrix<unsigned char, 3, 1>> & img)
 {
-  int sum = 0;
+  //NOTE so this basically always returns 0
+  //pretty sure you can work out a MUCH better way to do it than to iterate through a loop 400+ times
+  //maybe something like (rows*cols*0.75f)-(remRows*remCols + sum) > 0 then stop
+  //think i did it - seems to be 2/3 as slow (0.01 down to 0.006) and counts less
+  //maybe I could remove the mES ? thres in the cols loop?
 
-  //TODO this is a laaarge loop can i change this ?
-  for(int i = 0; i < img.rows; i++)
+  TICK("denseEnough");
+
+  float maxEndScore(img.rows * img.cols); //add to this
+  float threshold (maxEndScore * 0.75f);
+  int sum (0);
+  bool currPix (0);
+
+  int i (0);
+  while (maxEndScore > threshold && i < img.rows)
   {
-    for(int j = 0; j < img.cols; j++)
+    int j (0);
+    while (maxEndScore > threshold && j < img.cols)
     {
-      sum += img.at<Eigen::Matrix<unsigned char, 3, 1>>(i, j)(0) > 0 &&
-             img.at<Eigen::Matrix<unsigned char, 3, 1>>(i, j)(1) > 0 &&
-             img.at<Eigen::Matrix<unsigned char, 3, 1>>(i, j)(2) > 0;
+      currPix = img.at<Eigen::Matrix<unsigned char, 3, 1>>(i, j)(0) > 0 &&
+        img.at<Eigen::Matrix<unsigned char, 3, 1>>(i, j)(1) > 0 &&
+        img.at<Eigen::Matrix<unsigned char, 3, 1>>(i, j)(2) > 0;
+      sum += currPix;
+      maxEndScore += currPix;
+      j++;
     }
+    i++;
+    maxEndScore -= img.cols;
   }
 
-  return float(sum) / float(img.rows * img.cols) > 0.75f;
+  //int sum = 0;
+
+  ////TODO this is a laaarge loop can i change this ?
+  ////NOTE changed wooooooo
+  //for(int i = 0; i < img.rows; i++)
+  //{
+  //  for(int j = 0; j < img.cols; j++)
+  //  {
+  //    sum += img.at<Eigen::Matrix<unsigned char, 3, 1>>(i, j)(0) > 0 &&
+  //      img.at<Eigen::Matrix<unsigned char, 3, 1>>(i, j)(1) > 0 &&
+  //      img.at<Eigen::Matrix<unsigned char, 3, 1>>(i, j)(2) > 0;
+  //  }
+  //}
+
+  TOCK("denseEnough");
+  //return float(sum) / float(img.rows * img.cols) > 0.75f;
+  return maxEndScore > threshold;
 }
 
 void ElasticFusion::processInitialFrame()
