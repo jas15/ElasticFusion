@@ -115,8 +115,6 @@ ElasticFusion::~ElasticFusion()
   f.open(fname.c_str(), std::fstream::out);
 
   //NOTE poseGraph is a vector
-  //printf("Pose graph size = %d", poseGraph.size()); //TODO remove
-
   for(size_t i = 0; i < poseGraph.size(); i++)
   {
     std::stringstream strs;
@@ -294,7 +292,7 @@ bool ElasticFusion::denseEnough(const Img<Eigen::Matrix<unsigned char, 3, 1>> & 
 
   //int sum = 0;
 
-  ////TODO this is a laaarge loop can i change this ?
+  ////NOTE this is a laaarge loop can i change this ?
   ////NOTE changed wooooooo
   //for(int i = 0; i < img.rows; i++)
   //{
@@ -440,12 +438,12 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
   Eigen::Vector3f diffTrans = diff.topRightCorner(3, 1);
   Eigen::Matrix3f diffRot = diff.topLeftCorner(3, 3);
 
-  //TODO surely can ease this weighting bit... doesn't seem like i can from first thought
+  //NOTE tried improving the small math but doesn't really get quicker
   //Weight by velocity
-  float weighting = std::max(diffTrans.norm(), rodrigues2(diffRot).norm());
-
   float largest = 0.01;
   float minWeight = 0.5;
+
+  float weighting = std::max(diffTrans.norm(), rodrigues2(diffRot).norm());
 
   if(weighting > largest)
   {
@@ -453,7 +451,6 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
   }
 
   weighting = std::max(1.0f - (weighting / largest), minWeight) * weightMultiplier;
-  //TODO to here
 
   std::vector<Ferns::SurfaceConstraint> constraints;
 
@@ -482,7 +479,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
     TOCK("Ferns::findFrame");
 
     //CLOSELOOPS TRUE
-    //TODO could do lazy eval? which is more likely to be false
+    //NOTE could do lazy eval? which is more likely to be false (implemented)
     //NOTE closeLoops more likely to be true. it's just set in header file. swapped order
     if(ferns.lastClosest != -1)
     {
@@ -523,7 +520,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
     } //end of ferns.lastClosest
 
     //If we didn't match to a fern
-    //NOTE changed the order of this. was rawGraph @ end
+    //NOTE lazy eval. changed the order of this. was rawGraph @ end
     if(rawGraph.size() == 0 && !lost) //CLOSELOOPS TRUE
     {
       TICK("closeLoops bit"); //~80ms
@@ -542,7 +539,6 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
 
       TICK("closeLoops::1"); //~10ms
       //WARNING initICP* must be called before initRGB*
-      //TODO pretty sure these 4 lines were called somewhere else ? common code pull it out
       modelToModel.initICPModel(indexMap.oldVertexTex(), indexMap.oldNormalTex(), maxDepthProcessed, currPose);
       modelToModel.initRGBModel(indexMap.oldImageTex());
 
@@ -553,7 +549,8 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
       Eigen::Matrix<float, 3, 3, Eigen::RowMajor> rot = currPose.topLeftCorner(3, 3);
       TOCK("closeLoops::1");
 
-      TICK("closeLoops::2"); //~60ms
+      //TICK("closeLoops::2"); //~60ms
+      //NOTE func in RGBDOdometry
       modelToModel.getIncrementalTransformation(trans,
                                                 rot,
                                                 false,
@@ -561,12 +558,12 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
                                                 pyramid,
                                                 fastOdom,
                                                 false);
-      TOCK("closeLoops::2");
+      //TOCK("closeLoops::2");
 
       Eigen::MatrixXd covar = modelToModel.getCovariance();
       bool covOk = true;
 
-      //TODO for vs while loop speed ??
+      //NOTE for vs while loop speed ??
       //NOTE improved wooo
       int i (0);
       while (covOk && i < 6)
@@ -593,22 +590,19 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
       if(covOk && modelToModel.lastICPCount > icpCountThresh && modelToModel.lastICPError < icpErrThresh)
       {
         //NOTE doesn't go into here !!!
+        //---------------------------------------------------------------------
         resize.vertex(indexMap.vertexTex(), consBuff);
         resize.time(indexMap.oldTimeTex(), timesBuff);
 
-        //TODO this is HUUUUGE each and every time - dont think it can change tho wah
-        int currCountLoop = 0;
-        int ifloop (0);
+        //NOTE this is HUUUUGE each and every time - dont think it can change tho wah
         for(int i = 0; i < consBuff.cols; i++)
         {
           for(int j = 0; j < consBuff.rows; j++)
           {
-            currCountLoop++; //TODO remove
             if(consBuff.at<Eigen::Vector4f>(j, i)(2) > 0 &&
                 consBuff.at<Eigen::Vector4f>(j, i)(2) < maxDepthProcessed &&
                 timesBuff.at<unsigned short>(j, i) > 0)
             {
-              ifloop++;
               Eigen::Vector4f worldRawPoint = currPose * Eigen::Vector4f(consBuff.at<Eigen::Vector4f>(j, i)(0),
                   consBuff.at<Eigen::Vector4f>(j, i)(1),
                   consBuff.at<Eigen::Vector4f>(j, i)(2),
@@ -630,13 +624,9 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
           }
         }
 
-        //TODO print currCountLoop
-        //jokes it doesnt even go here ???
-        printf("Count loop = %d\n", currCountLoop);
-        printf("Ifs in loop = %d\n", ifloop);
-
         std::vector<Deformation::Constraint> newRelativeCons;
 
+        //NOTE doesn't reach here
         if(localDeformation.constrain(ferns.frames, rawGraph, tick, false, poseGraph, false, &newRelativeCons))
         {
           poseMatches.push_back(PoseMatch(ferns.frames.size() - 1, ferns.frames.size(), estPose, currPose, constraints, false));
@@ -645,12 +635,13 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
 
           currPose = estPose;
 
-          //TODO big loop?
           for(size_t i = 0; i < newRelativeCons.size(); i += newRelativeCons.size() / 3)
           {
             relativeCons.push_back(newRelativeCons.at(i));
           }
         }//end of localDeformation.constrain
+        //not here
+        //---------------------------------------------------------------------
       }//end of covOK
     }//end of rawGraph.size
   }//end of closeLoops
@@ -774,7 +765,7 @@ void ElasticFusion::predict()
 {
   TICK("IndexMap::ACTIVE");
 
-  //TODO could change this if block to lastFrameRecovery ? 0 : tick
+  //NOTE have changed this if block to lastFrameRecovery ? 0 : tick
   indexMap.combinedPredict(currPose,
                             globalModel.model(),
                             maxDepthProcessed,
@@ -954,7 +945,8 @@ void ElasticFusion::savePly()
   delete [] mapData;
 }
 
-//TODO understand these tings. Probably v fast but might not be...
+//NOTE understand these tings. Probably v fast but might not be...
+//V fast ! 0.01ms
 Eigen::Vector3f ElasticFusion::rodrigues2(const Eigen::Matrix3f& matrix)
 {
   Eigen::JacobiSVD<Eigen::Matrix3f> svd(matrix, Eigen::ComputeFullV | Eigen::ComputeFullU);

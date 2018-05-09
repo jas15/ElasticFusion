@@ -390,7 +390,6 @@ void GlobalModel::fuseData(const Eigen::Matrix4f & pose,
   glEndTransformFeedback();
 
   //NOTE everything above is <1ms. from here to #data is ~8-10ms
-  TICK("Data4");
   frameBuffer.Unbind();
 
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -407,7 +406,6 @@ void GlobalModel::fuseData(const Eigen::Matrix4f & pose,
 
   glFinish();
   //#data
-  TOCK("Data4");
   TOCK("Fuse::Data");
 }
 

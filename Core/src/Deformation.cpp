@@ -86,6 +86,7 @@ void Deformation::addConstraint(const Eigen::Vector4f & src,
   }
 }
 
+//NOTE doesn't go in here atm
 bool Deformation::constrain(std::vector<Ferns::Frame*> & ferns,
               std::vector<float> & rawGraph,
               int time,
@@ -94,13 +95,9 @@ bool Deformation::constrain(std::vector<Ferns::Frame*> & ferns,
               const bool relaxGraph,
               std::vector<Constraint> * newRelativeCons)
 {
-  //TODO check builds n runs ok as altered the if stmt for better code practice
   if (!def.isInit()) {
     return false;
   }
-
-  //if(def.isInit())
-  //{
   std::vector<unsigned long long int> times;
   std::vector<Eigen::Matrix4f> poses;
   std::vector<Eigen::Matrix4f*> rawPoses;
@@ -217,9 +214,6 @@ bool Deformation::constrain(std::vector<Ferns::Frame*> & ferns,
   constraints.clear();
 
   return poseUpdated;
-  //}
-
-  //return false;
 }
 
 void Deformation::sampleGraphFrom(Deformation & other)
