@@ -32,11 +32,11 @@ Ferns::Ferns(int n, int maxDepth, const float photoThresh)
    lastClosest(-1),
    badCode(255),
    rgbd(Resolution::getInstance().width() / factor,
-    Resolution::getInstance().height() / factor,
-    Intrinsics::getInstance().cx() / factor,
-    Intrinsics::getInstance().cy() / factor,
-    Intrinsics::getInstance().fx() / factor,
-    Intrinsics::getInstance().fy() / factor),
+        Resolution::getInstance().height() / factor,
+        Intrinsics::getInstance().cx() / factor,
+        Intrinsics::getInstance().cy() / factor,
+        Intrinsics::getInstance().fx() / factor,
+        Intrinsics::getInstance().fy() / factor),
    vertFern(width, height, GL_RGBA32F, GL_LUMINANCE, GL_FLOAT, false, true),
    vertCurrent(width, height, GL_RGBA32F, GL_LUMINANCE, GL_FLOAT, false, true),
    normFern(width, height, GL_RGBA32F, GL_LUMINANCE, GL_FLOAT, false, true),
@@ -54,32 +54,20 @@ Ferns::Ferns(int n, int maxDepth, const float photoThresh)
 
 Ferns::~Ferns()
 {
+  //TODO surely just quicker to delete the whole thing then create a new one?
   for(size_t i = 0; i < frames.size(); i++)
   {
     delete frames.at(i);
   }
 }
 
-void Ferns::generateFerns()
-{
-  for(int i = 0; i < num; i++)
-  {
-    Fern f;
-
-    f.pos(0) = widthDist(random);
-    f.pos(1) = heightDist(random);
-
-    f.rgbd(0) = rgbDist(random);
-    f.rgbd(1) = rgbDist(random);
-    f.rgbd(2) = rgbDist(random);
-    f.rgbd(3) = dDist(random);
-
-    conservatory.push_back(f);
-  }
-}
-
 //IMPROVE
-bool Ferns::addFrame(GPUTexture * imageTexture, GPUTexture * vertexTexture, GPUTexture * normalTexture, const Eigen::Matrix4f & pose, int srcTime, const float threshold)
+bool Ferns::addFrame(GPUTexture * imageTexture,
+                      GPUTexture * vertexTexture,
+                      GPUTexture * normalTexture,
+                      const Eigen::Matrix4f & pose,
+                      int srcTime,
+                      const float threshold)
 {
   TICK("Ferns::AddFrame");
   Img<Eigen::Matrix<unsigned char, 3, 1>> img(height, width);
@@ -91,13 +79,13 @@ bool Ferns::addFrame(GPUTexture * imageTexture, GPUTexture * vertexTexture, GPUT
   resize.vertex(normalTexture, norms);
 
   Frame * frame (new Frame(num,
-                frames.size(),
-                pose,
-                srcTime,
-                width * height,
-                (unsigned char *)img.data,
-                (Eigen::Vector4f *)verts.data,
-                (Eigen::Vector4f *)norms.data));
+                            frames.size(),
+                            pose,
+                            srcTime,
+                            width * height,
+                            (unsigned char *)img.data,
+                            (Eigen::Vector4f *)verts.data,
+                            (Eigen::Vector4f *)norms.data));
 
   int * coOccurrences (new int[frames.size()]);
 
@@ -107,15 +95,15 @@ bool Ferns::addFrame(GPUTexture * imageTexture, GPUTexture * vertexTexture, GPUT
   {
     unsigned char code = badCode;
 
-    if(verts.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2) > 0)
+    if (verts.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2) > 0)
     {
       const Eigen::Matrix<unsigned char, 3, 1> & pix (img.at<Eigen::Matrix<unsigned char, 3, 1>>(conservatory.at(i).pos(1), conservatory.at(i).pos(0)));
 
       //bitwise operation - doesn't short circuit !
       code = (pix(0) > conservatory.at(i).rgbd(0)) << 3 |
-           (pix(1) > conservatory.at(i).rgbd(1)) << 2 |
-           (pix(2) > conservatory.at(i).rgbd(2)) << 1 |
-           (int(verts.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2) * 1000.0f) > conservatory.at(i).rgbd(3));
+              (pix(1) > conservatory.at(i).rgbd(1)) << 2 |
+              (pix(2) > conservatory.at(i).rgbd(2)) << 1 |
+              (int(verts.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2) * 1000.0f) > conservatory.at(i).rgbd(3));
 
       frame->goodCodes++;
 
@@ -136,7 +124,7 @@ bool Ferns::addFrame(GPUTexture * imageTexture, GPUTexture * vertexTexture, GPUT
     {
       float maxCo = std::min(frame->goodCodes, frames.at(i)->goodCodes);
 
-      //TODO accuracy (why create a new var)
+      //TODO accuracy (why create a new var?)
       minimum = std::min(minimum, (float)(maxCo - coOccurrences[i]) / (float)maxCo);
       //float dissim = (float)(maxCo - coOccurrences[i]) / (float)maxCo;
 
@@ -176,10 +164,10 @@ bool Ferns::addFrame(GPUTexture * imageTexture, GPUTexture * vertexTexture, GPUT
   //{
   //  for(int i = 0; i < num; i++)
   //  {
-  //    if(frame->codes[i] != badCode)
-  //    {
-  //      conservatory.at(i).ids[frame->codes[i]].push_back(frame->id);
-  //    }
+  //  if(frame->codes[i] != badCode)
+  //  {
+  //    conservatory.at(i).ids[frame->codes[i]].push_back(frame->id);
+  //  }
   //  }
 
   //  frames.push_back(frame);
@@ -187,8 +175,7 @@ bool Ferns::addFrame(GPUTexture * imageTexture, GPUTexture * vertexTexture, GPUT
   //  TOCK("goodCodes");
   //  TOCK("Ferns::AddFrame");
   //  return true;
-  //}
-  //else
+  //} else
   //{
   //  delete frame;
 
@@ -198,13 +185,32 @@ bool Ferns::addFrame(GPUTexture * imageTexture, GPUTexture * vertexTexture, GPUT
   //}
 }
 
+void Ferns::generateFerns()
+{
+  //TODO wtf is num? can't we use a while and decrease it each time instead of new var
+  for(int i = 0; i < num; i++)
+  {
+    Fern f;
+
+    f.pos(0) = widthDist(random);
+    f.pos(1) = heightDist(random);
+
+    f.rgbd(0) = rgbDist(random);
+    f.rgbd(1) = rgbDist(random);
+    f.rgbd(2) = rgbDist(random);
+    f.rgbd(3) = dDist(random);
+
+    conservatory.push_back(f);
+  }
+}
+
 Eigen::Matrix4f Ferns::findFrame(std::vector<SurfaceConstraint> & constraints,
-                 const Eigen::Matrix4f & currPose,
-                 GPUTexture * vertexTexture,
-                 GPUTexture * normalTexture,
-                 GPUTexture * imageTexture,
-                 const int time,
-                 const bool lost)
+                                 const Eigen::Matrix4f & currPose,
+                                 GPUTexture * vertexTexture,
+                                 GPUTexture * normalTexture,
+                                 GPUTexture * imageTexture,
+                                 const int time,
+                                 const bool lost)
 {
   lastClosest = -1;
 
@@ -222,18 +228,19 @@ Eigen::Matrix4f Ferns::findFrame(std::vector<SurfaceConstraint> & constraints,
 
   memset(coOccurrences, 0, sizeof(int) * frames.size());
 
+  //TODO pretty sure this is called somewhere above
   for(int i = 0; i < num; i++)
   {
     unsigned char code = badCode;
 
-    if(vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2) > 0)
+    if (vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2) > 0)
     {
       const Eigen::Matrix<unsigned char, 3, 1> & pix = imgSmall.at<Eigen::Matrix<unsigned char, 3, 1>>(conservatory.at(i).pos(1), conservatory.at(i).pos(0));
 
       code = (pix(0) > conservatory.at(i).rgbd(0)) << 3 |
-           (pix(1) > conservatory.at(i).rgbd(1)) << 2 |
-           (pix(2) > conservatory.at(i).rgbd(2)) << 1 |
-           (int(vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2) * 1000.0f) > conservatory.at(i).rgbd(3));
+             (pix(1) > conservatory.at(i).rgbd(1)) << 2 |
+             (pix(2) > conservatory.at(i).rgbd(2)) << 1 |
+             (int(vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2) * 1000.0f) > conservatory.at(i).rgbd(3));
 
       frame->goodCodes++;
 
@@ -274,29 +281,26 @@ Eigen::Matrix4f Ferns::findFrame(std::vector<SurfaceConstraint> & constraints,
     vertCurrent.texture->Upload(vertSmall.data, GL_RGBA, GL_FLOAT);
 
     normFern.texture->Upload(frames.at(minId)->initNorms, GL_RGBA, GL_FLOAT);
-    normCurrent.texture->Upload(normSmall.data, GL_RGBA, GL_FLOAT);
-
-//      colorFern.texture->Upload(frames.at(minId)->initRgb, GL_RGB, GL_UNSIGNED_BYTE);
-//      colorCurrent.texture->Upload(imgSmall.data, GL_RGB, GL_UNSIGNED_BYTE);
-
+    normCurrent.texture->Upload(normSmall.data, GL_RGBA, GL_FLOAT); 
+    //colorFern.texture->Upload(frames.at(minId)->initRgb, GL_RGB, GL_UNSIGNED_BYTE); 
+    //colorCurrent.texture->Upload(imgSmall.data, GL_RGB, GL_UNSIGNED_BYTE); 
     //WARNING initICP* must be called before initRGB*
     rgbd.initICPModel(&vertFern, &normFern, (float)maxDepth / 1000.0f, fernPose);
-//      rgbd.initRGBModel(&colorFern);
-
+    //rgbd.initRGBModel(&colorFern);
     rgbd.initICP(&vertCurrent, &normCurrent, (float)maxDepth / 1000.0f);
-//      rgbd.initRGB(&colorCurrent);
+    //rgbd.initRGB(&colorCurrent);
 
     Eigen::Vector3f trans = fernPose.topRightCorner(3, 1);
     Eigen::Matrix<float, 3, 3, Eigen::RowMajor> rot = fernPose.topLeftCorner(3, 3);
 
     TICK("fernOdom");
     rgbd.getIncrementalTransformation(trans,
-                      rot,
-                      false,
-                      100,
-                      false,
-                      false,
-                      false);
+                                      rot,
+                                      false,
+                                      100,
+                                      false,
+                                      false,
+                                      false);
     TOCK("fernOdom");
 
     estPose.topRightCorner(3, 1) = trans;
@@ -306,7 +310,7 @@ Eigen::Matrix4f Ferns::findFrame(std::vector<SurfaceConstraint> & constraints,
 
     int icpCountThresh = lost ? 1400 : 2400;
 
-//      std::cout << rgbd.lastICPError << ", " << rgbd.lastICPCount << ", " << photoError << std::endl;
+    //std::cout << rgbd.lastICPError << ", " << rgbd.lastICPCount << ", " << photoError << std::endl;
 
     if(rgbd.lastICPError < 0.0003 && rgbd.lastICPCount > icpCountThresh && photoError < photoThresh)
     {
@@ -318,14 +322,14 @@ Eigen::Matrix4f Ferns::findFrame(std::vector<SurfaceConstraint> & constraints,
            int(vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2) * 1000.0f) < maxDepth)
         {
           Eigen::Vector4f worldRawPoint = currPose * Eigen::Vector4f(vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(0),
-                                         vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(1),
-                                         vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2),
-                                         1.0f);
+                         vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(1),
+                         vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2),
+                         1.0f);
 
           Eigen::Vector4f worldModelPoint = estPose * Eigen::Vector4f(vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(0),
-                                        vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(1),
-                                        vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2),
-                                        1.0f);
+                        vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(1),
+                        vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2),
+                        1.0f);
 
           constraints.push_back(SurfaceConstraint(worldRawPoint, worldModelPoint));
         }
@@ -334,15 +338,14 @@ Eigen::Matrix4f Ferns::findFrame(std::vector<SurfaceConstraint> & constraints,
   }
 
   delete frame;
-
   return estPose;
 }
 
 float Ferns::photometricCheck(const Img<Eigen::Vector4f> & vertSmall,
-                const Img<Eigen::Matrix<unsigned char, 3, 1>> & imgSmall,
-                const Eigen::Matrix4f & estPose,
-                const Eigen::Matrix4f & fernPose,
-                const unsigned char * fernRgb)
+                              const Img<Eigen::Matrix<unsigned char, 3, 1>> & imgSmall,
+                              const Eigen::Matrix4f & estPose,
+                              const Eigen::Matrix4f & fernPose,
+                              const unsigned char * fernRgb)
 {
   float cx = Intrinsics::getInstance().cx() / factor;
   float cy = Intrinsics::getInstance().cy() / factor;
@@ -356,13 +359,14 @@ float Ferns::photometricCheck(const Img<Eigen::Vector4f> & vertSmall,
 
   for(int i = 0; i < num; i++)
   {
+    //TODO better version of if stmt?
     if(vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2) > 0 &&
        int(vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2) * 1000.0f) < maxDepth)
     {
       Eigen::Vector4f vertPoint = Eigen::Vector4f(vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(0),
-                            vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(1),
-                            vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2),
-                            1.0f);
+                vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(1),
+                vertSmall.at<Eigen::Vector4f>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(2),
+                1.0f);
 
       Eigen::Matrix4f diff = fernPose.inverse() * estPose;
 
@@ -372,8 +376,8 @@ float Ferns::photometricCheck(const Img<Eigen::Vector4f> & vertSmall,
 
       if(correspondence(0) >= 0 && correspondence(1) >= 0 && correspondence(0) < width && correspondence(1) < height &&
          (imgFern.at<Eigen::Matrix<unsigned char, 3, 1>>(correspondence(1), correspondence(0))(0) > 0 ||
-        imgFern.at<Eigen::Matrix<unsigned char, 3, 1>>(correspondence(1), correspondence(0))(1) > 0 ||
-        imgFern.at<Eigen::Matrix<unsigned char, 3, 1>>(correspondence(1), correspondence(0))(2) > 0))
+          imgFern.at<Eigen::Matrix<unsigned char, 3, 1>>(correspondence(1), correspondence(0))(1) > 0 ||
+          imgFern.at<Eigen::Matrix<unsigned char, 3, 1>>(correspondence(1), correspondence(0))(2) > 0))
       {
         photoSum += abs((int)imgFern.at<Eigen::Matrix<unsigned char, 3, 1>>(correspondence(1), correspondence(0))(0) - (int)imgSmall.at<Eigen::Matrix<unsigned char, 3, 1>>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(0));
         photoSum += abs((int)imgFern.at<Eigen::Matrix<unsigned char, 3, 1>>(correspondence(1), correspondence(0))(1) - (int)imgSmall.at<Eigen::Matrix<unsigned char, 3, 1>>(conservatory.at(i).pos(1), conservatory.at(i).pos(0))(1));

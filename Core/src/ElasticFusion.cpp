@@ -50,6 +50,7 @@ ElasticFusion::ElasticFusion(const int timeDelta,
                 Intrinsics::getInstance().fx(),
                 Intrinsics::getInstance().fy()),
    //fern helps for global loop closure ? stored as a database p much
+   //TODO what happens if we change 500?
    ferns(500, depthCut * 1000, photoThresh),
    saveFilename(fileName),
    //current location
@@ -284,7 +285,7 @@ void ElasticFusion::processInitialFrame()
 
 //--------------------------- FUNCTIONS THAT WILL MAKE A DIFFERENCE ----------------------------
 
-//IMPROVE
+//IMPROVED
 bool ElasticFusion::denseEnough(const Img<Eigen::Matrix<unsigned char, 3, 1>> & img)
 {
   //NOTE negligibly small @ 0.005ms.
@@ -776,9 +777,7 @@ void ElasticFusion::processFrame(const unsigned char * rgb,
 void ElasticFusion::processFerns()
 {
   //NOTE 1.4-4.6ms (2.9avg)
-  TICK("Ferns::addFrame");
   ferns.addFrame(&fillIn.imageTexture, &fillIn.vertexTexture, &fillIn.normalTexture, currPose, tick, fernThresh);
-  TOCK("Ferns::addFrame");
 }
 
 //IMPROVE
