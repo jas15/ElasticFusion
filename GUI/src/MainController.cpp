@@ -34,7 +34,7 @@ MainController::MainController(int argc, char * argv[])
   std::string calibrationFile;
   Parse::get().arg(argc, argv, "-cal", calibrationFile);
 
-  Resolution::getInstance(640, 480);
+  Resolution::getInstance(640, 480); //NOTE can I change this? I feel like I can't as that's VGA == sensor
 
   if(calibrationFile.length())
   {
@@ -49,10 +49,12 @@ MainController::MainController(int argc, char * argv[])
 
   if(logFile.length())
   {
+    //NOTE this is where the log reader is set for reading in input
     logReader = new RawLogReader(logFile, Parse::get().arg(argc, argv, "-f", empty) > -1);
   }
   else
   {
+    //NOTE if Kinect sensor is used
     bool flipColors = Parse::get().arg(argc,argv,"-f",empty) > -1;
     logReader = new LiveLogReader(logFile, flipColors, LiveLogReader::CameraType::OpenNI2);
 

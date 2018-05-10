@@ -86,6 +86,7 @@ ElasticFusion::ElasticFusion(const int timeDelta,
    frameToFrameRGB(frameToFrameRGB),
    depthCutoff(depthCut)
 {
+  //NOTE initialisation tings
   createTextures();
   createCompute();
   createFeedbackBuffers();
@@ -102,6 +103,7 @@ ElasticFusion::ElasticFusion(const int timeDelta,
 
 ElasticFusion::~ElasticFusion()
 {
+  //NOTE seems not to go here
   if(iclnuim)
   {
     savePly();
@@ -111,6 +113,7 @@ ElasticFusion::~ElasticFusion()
   std::string fname = saveFilename;
   fname.append(".freiburg");
 
+  TICK("poseGraphSize"); //TODO remove
   std::ofstream f;
   f.open(fname.c_str(), std::fstream::out);
 
@@ -136,7 +139,9 @@ ElasticFusion::~ElasticFusion()
   }
 
   f.close();
+  TOCK("poseGraphSize"); //TODO remove
 
+  TICK("deleteThings");
   //delete every texture
   for(std::map<std::string, GPUTexture*>::iterator it = textures.begin(); it != textures.end(); ++it)
   {
@@ -160,42 +165,44 @@ ElasticFusion::~ElasticFusion()
   }
 
   feedbackBuffers.clear();
+  TOCK("deleteThings");
 }
 
-//create all the textures needed for representation
+//INIT
 void ElasticFusion::createTextures()
 {
+  //NOTE createTextures takes 2.245ms. only called in init
   //easier to read. why do ppl copy the same 40 characters in 6 different places within 40 lines ?! twice !
   int w = Resolution::getInstance().width();
   int h = Resolution::getInstance().height();
 
-  textures[GPUTexture::RGB] = new GPUTexture(w,
-                                             h,
-                                             GL_RGBA,
-                                             GL_RGB,
-                                             GL_UNSIGNED_BYTE,
-                                             true,
-                                             true);
+  textures[GPUTexture::RGB]                   = new GPUTexture(w,
+                                                               h,
+                                                               GL_RGBA,
+                                                               GL_RGB,
+                                                               GL_UNSIGNED_BYTE,
+                                                               true,
+                                                               true);
 
-  textures[GPUTexture::DEPTH_RAW] = new GPUTexture(w,
-                                                   h,
-                                                   GL_LUMINANCE16UI_EXT,
-                                                   GL_LUMINANCE_INTEGER_EXT,
-                                                   GL_UNSIGNED_SHORT);
+  textures[GPUTexture::DEPTH_RAW]             = new GPUTexture(w,
+                                                               h,
+                                                               GL_LUMINANCE16UI_EXT,
+                                                               GL_LUMINANCE_INTEGER_EXT,
+                                                               GL_UNSIGNED_SHORT);
 
-  textures[GPUTexture::DEPTH_FILTERED] = new GPUTexture(w,
-                                                        h,
-                                                        GL_LUMINANCE16UI_EXT,
-                                                        GL_LUMINANCE_INTEGER_EXT,
-                                                        GL_UNSIGNED_SHORT,
-                                                        false,
-                                                        true);
+  textures[GPUTexture::DEPTH_FILTERED]        = new GPUTexture(w,
+                                                               h,
+                                                               GL_LUMINANCE16UI_EXT,
+                                                               GL_LUMINANCE_INTEGER_EXT,
+                                                               GL_UNSIGNED_SHORT,
+                                                               false,
+                                                               true);
 
-  textures[GPUTexture::DEPTH_METRIC] = new GPUTexture(w,
-                                                      h,
-                                                      GL_LUMINANCE32F_ARB,
-                                                      GL_LUMINANCE,
-                                                      GL_FLOAT);
+  textures[GPUTexture::DEPTH_METRIC]          = new GPUTexture(w,
+                                                               h,
+                                                               GL_LUMINANCE32F_ARB,
+                                                               GL_LUMINANCE,
+                                                               GL_FLOAT);
 
   textures[GPUTexture::DEPTH_METRIC_FILTERED] = new GPUTexture(w,
                                                                h,
@@ -203,18 +210,20 @@ void ElasticFusion::createTextures()
                                                                GL_LUMINANCE,
                                                                GL_FLOAT);
 
-  textures[GPUTexture::DEPTH_NORM] = new GPUTexture(w,
-                                                    h,
-                                                    GL_LUMINANCE,
-                                                    GL_LUMINANCE,
-                                                    GL_FLOAT,
-                                                    true);
+  textures[GPUTexture::DEPTH_NORM]            = new GPUTexture(w,
+                                                               h,
+                                                               GL_LUMINANCE,
+                                                               GL_LUMINANCE,
+                                                               GL_FLOAT,
+                                                               true);
 }
 
+//INIT
 void ElasticFusion::createCompute()
 {
-  std::string eV = "empty.vert";
-  std::string qG = "quad.geom";
+  //NOTE createCompute takes 8.335ms. only called on init
+  std::string eV ("empty.vert");
+  std::string qG ("quad.geom");
 
   computePacks[ComputePack::NORM] = new ComputePack(loadProgramFromFile(eV, "depth_norm.frag", qG),
                                                     textures[GPUTexture::DEPTH_NORM]->texture);
@@ -229,22 +238,24 @@ void ElasticFusion::createCompute()
                                                                textures[GPUTexture::DEPTH_METRIC_FILTERED]->texture);
 }
 
+//INIT
 FeedbackBuffer * ElasticFusion::helperCreateFeedbackBuffers() {
+  //NOTE called only twice at init
   return new FeedbackBuffer(loadProgramGeomFromFile("vertex_feedback.vert", "vertex_feedback.geom"));
 }
 
+//INIT
 void ElasticFusion::createFeedbackBuffers()
 {
+  //NOTE only called on initialisation
   feedbackBuffers[FeedbackBuffer::RAW]      = helperCreateFeedbackBuffers();
   feedbackBuffers[FeedbackBuffer::FILTERED] = helperCreateFeedbackBuffers();
-  //NOTE was --
-  //feedbackBuffers[FeedbackBuffer::RAW] = new FeedbackBuffer(loadProgramGeomFromFile("vertex_feedback.vert", "vertex_feedback.geom"));
-  //feedbackBuffers[FeedbackBuffer::FILTERED] = new FeedbackBuffer(loadProgramGeomFromFile("vertex_feedback.vert", "vertex_feedback.geom"));
 }
 
-
+//FRAME 1
 void ElasticFusion::computeFeedbackBuffers()
 {
+  //NOTE computeFeedbackBuffers takes 2.245ms. only called in initial frame
   TICK("feedbackBuffers");
   feedbackBuffers[FeedbackBuffer::RAW]->compute(textures[GPUTexture::RGB]->texture,
                                                 textures[GPUTexture::DEPTH_METRIC]->texture,
@@ -258,15 +269,30 @@ void ElasticFusion::computeFeedbackBuffers()
   TOCK("feedbackBuffers");
 }
 
+//FRAME 1
+void ElasticFusion::processInitialFrame()
+{
+  //NOTE is it worth changing the things here? initial frame == once
+  //in real life the first frame wouldn't even matter that much surely
+  //initialise some things
+  computeFeedbackBuffers();
+
+  globalModel.initialise(*feedbackBuffers[FeedbackBuffer::RAW], *feedbackBuffers[FeedbackBuffer::FILTERED]);
+
+  frameToModel.initFirstRGB(textures[GPUTexture::RGB]);
+}
+
+//--------------------------- FUNCTIONS THAT WILL MAKE A DIFFERENCE ----------------------------
+
+//IMPROVE
 bool ElasticFusion::denseEnough(const Img<Eigen::Matrix<unsigned char, 3, 1>> & img)
 {
+  //NOTE negligibly small @ 0.005ms.
   //NOTE so this basically always returns 0
   //pretty sure you can work out a MUCH better way to do it than to iterate through a loop 400+ times
   //maybe something like (rows*cols*0.75f)-(remRows*remCols + sum) > 0 then stop
   //think i did it - seems to be 2/3 as slow (0.01 down to 0.006) and counts less
   //maybe I could remove the mES ? thres in the cols loop?
-
-  TICK("denseEnough");
 
   float maxEndScore(img.rows * img.cols); //add to this
   float threshold (maxEndScore * 0.75f);
@@ -290,40 +316,31 @@ bool ElasticFusion::denseEnough(const Img<Eigen::Matrix<unsigned char, 3, 1>> & 
     maxEndScore -= img.cols;
   }
 
-  //int sum = 0;
+  /*
+  int sum = 0;
 
-  ////NOTE this is a laaarge loop can i change this ?
-  ////NOTE changed wooooooo
-  //for(int i = 0; i < img.rows; i++)
-  //{
-  //  for(int j = 0; j < img.cols; j++)
-  //  {
-  //    sum += img.at<Eigen::Matrix<unsigned char, 3, 1>>(i, j)(0) > 0 &&
-  //      img.at<Eigen::Matrix<unsigned char, 3, 1>>(i, j)(1) > 0 &&
-  //      img.at<Eigen::Matrix<unsigned char, 3, 1>>(i, j)(2) > 0;
-  //  }
-  //}
+  for(int i = 0; i < img.rows; i++)
+  {
+    for(int j = 0; j < img.cols; j++)
+    {
+      sum += img.at<Eigen::Matrix<unsigned char, 3, 1>>(i, j)(0) > 0 &&
+        img.at<Eigen::Matrix<unsigned char, 3, 1>>(i, j)(1) > 0 &&
+        img.at<Eigen::Matrix<unsigned char, 3, 1>>(i, j)(2) > 0;
+    }
+  }
+  return float(sum) / float(img.rows * img.cols) > 0.75f;
+  */
 
-  TOCK("denseEnough");
-  //return float(sum) / float(img.rows * img.cols) > 0.75f;
   return maxEndScore > threshold;
 }
 
-void ElasticFusion::processInitialFrame()
-{
-  //initialise some things
-  computeFeedbackBuffers();
-
-  globalModel.initialise(*feedbackBuffers[FeedbackBuffer::RAW], *feedbackBuffers[FeedbackBuffer::FILTERED]);
-
-  frameToModel.initFirstRGB(textures[GPUTexture::RGB]);
-
-}
-
+//IMPROVE
+//NOTE this is probably the most important function
 void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
                                             const float weightMultiplier,
                                             const bool bootstrap)
 {
+  TICK("processSeq"); //NOTE 120-160ms == 75% of Run
   Eigen::Matrix4f lastPose = currPose;
 
   bool trackingOk = true;
@@ -369,7 +386,6 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
 
     trackingOk = !reloc || frameToModel.lastICPError < 1e-04;
 
-    TICK("reloc");
     if(reloc)
     {
       if(!lost)
@@ -431,7 +447,6 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
   {
     currPose = *inPose;
   }
-  TOCK("reloc");
 
   Eigen::Matrix4f diff = currPose.inverse() * lastPose;
 
@@ -552,12 +567,12 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
       //TICK("closeLoops::2"); //~60ms
       //NOTE func in RGBDOdometry
       modelToModel.getIncrementalTransformation(trans,
-                                                rot,
-                                                false,
-                                                10,
-                                                pyramid,
-                                                fastOdom,
-                                                false);
+          rot,
+          false,
+          10,
+          pyramid,
+          fastOdom,
+          false);
       //TOCK("closeLoops::2");
 
       Eigen::MatrixXd covar = modelToModel.getCovariance();
@@ -698,9 +713,11 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
         maxDepthProcessed,
         fernAccepted);
   }
-
+  TOCK("processSeq");
 }
 
+//IMPROVE
+//NOTE this is the original func. sequentialFrame gets called from here. called in MainController.cpp
 void ElasticFusion::processFrame(const unsigned char * rgb,
                                  const unsigned short * depth,
                                  const int64_t & timestamp,
@@ -710,16 +727,18 @@ void ElasticFusion::processFrame(const unsigned char * rgb,
 {
   TICK("Run"); //timer starts here
 
-  //Upload is a Pangolin thing so that would be the GUI aspect ?
+  TICK("WholePreProcess");
+  //Upload is a Pangolin thing so would that be the GUI aspect ?
   textures[GPUTexture::DEPTH_RAW]->texture->Upload(depth, GL_LUMINANCE_INTEGER_EXT, GL_UNSIGNED_SHORT);
   textures[GPUTexture::RGB]->texture->Upload(rgb, GL_RGB, GL_UNSIGNED_BYTE);
 
-  TICK("Preprocess");
+  TICK("Preprocess"); //5.8-8.3ms
 
   filterDepth(); //see line ~725. creates vector of uniforms based on current RGBD image then filters for max depth?
   metriciseDepth(); //above filterDepth. similar but not using resolution. also DEPTH_FILTERED
 
   TOCK("Preprocess");
+  TOCK("WholePreProcess");
 
   //First run
   if(tick == 1)
@@ -734,7 +753,7 @@ void ElasticFusion::processFrame(const unsigned char * rgb,
   poseGraph.push_back(std::pair<unsigned long long int, Eigen::Matrix4f>(tick, currPose));
   poseLogTimes.push_back(timestamp);
 
-  TICK("sampleGraph");
+  TICK("sampleGraph"); //2.2-4.3ms
 
   localDeformation.sampleGraphModel(globalModel.model());
 
@@ -753,18 +772,20 @@ void ElasticFusion::processFrame(const unsigned char * rgb,
   TOCK("Run"); //ends here
 }
 
+//IMPROVE
 void ElasticFusion::processFerns()
 {
+  //NOTE 1.4-4.6ms (2.9avg)
   TICK("Ferns::addFrame");
-  //TODO inspect this func
   ferns.addFrame(&fillIn.imageTexture, &fillIn.vertexTexture, &fillIn.normalTexture, currPose, tick, fernThresh);
   TOCK("Ferns::addFrame");
 }
 
+//IMPROVE
 void ElasticFusion::predict()
 {
+  //NOTE 5-10ms. 7 avg called twice per frame by the looks of things
   TICK("IndexMap::ACTIVE");
-
   //NOTE have changed this if block to lastFrameRecovery ? 0 : tick
   indexMap.combinedPredict(currPose,
                             globalModel.model(),
@@ -775,31 +796,20 @@ void ElasticFusion::predict()
                             timeDelta,
                             IndexMap::ACTIVE);
 
-  //if(lastFrameRecovery)
-  //{
-  //  indexMap.combinedPredict(currPose,
-  //                           globalModel.model(),
-  //                           maxDepthProcessed,
-  //                           confidenceThreshold,
-  //                           0,
-  //                           tick,
-  //                           timeDelta,
-  //                           IndexMap::ACTIVE);
-  //}
-  //else
-  //{
-  //  indexMap.combinedPredict(currPose,
-  //                           globalModel.model(),
-  //                           maxDepthProcessed,
-  //                           confidenceThreshold,
-  //                           tick,
-  //                           tick,
-  //                           timeDelta,
-  //                           IndexMap::ACTIVE);
-  //}
+  /*
+  if(lastFrameRecovery)
+  {
+    indexMap.combinedPredict(currPose, globalModel.model(), maxDepthProcessed, confidenceThreshold, 0, tick, timeDelta, 
+                              IndexMap::ACTIVE);
+  }
+  else
+  {
+    indexMap.combinedPredict(currPose, globalModel.model(), maxDepthProcessed, confidenceThreshold, tick, tick, timeDelta, 
+                              IndexMap::ACTIVE);
+  }
+  */
 
-  TICK("FillIn");
-  //TODO what does this do
+  TICK("FillIn"); //1.2-5.4ms. 2.37avg
   fillIn.vertex(indexMap.vertexTex(), textures[GPUTexture::DEPTH_FILTERED], lost);
   fillIn.normal(indexMap.normalTex(), textures[GPUTexture::DEPTH_FILTERED], lost);
   fillIn.image(indexMap.imageTex(), textures[GPUTexture::RGB], lost || frameToFrameRGB);
@@ -808,8 +818,10 @@ void ElasticFusion::predict()
   TOCK("IndexMap::ACTIVE");
 }
 
+//IMPROVE
 void ElasticFusion::metriciseDepth()
 {
+  TICK("metriciseDepth"); //0.7-1.2ms. avg 0.8
   std::vector<Uniform> uniforms;
 
   //NOTE there are a lot of push_back calls - what is being stored in here ? might be large data == slow
@@ -817,10 +829,13 @@ void ElasticFusion::metriciseDepth()
 
   computePacks[ComputePack::METRIC]->compute(textures[GPUTexture::DEPTH_RAW]->texture, &uniforms);
   computePacks[ComputePack::METRIC_FILTERED]->compute(textures[GPUTexture::DEPTH_FILTERED]->texture, &uniforms);
+  TOCK("metriciseDepth");
 }
 
+//IMPROVE
 void ElasticFusion::filterDepth()
 {
+  TICK("filterDepth"); //5.2-7.2ms. avg 5.9
   std::vector<Uniform> uniforms;
 
   //NOTE again push_back dead af can't this be done a different way ?
@@ -829,10 +844,63 @@ void ElasticFusion::filterDepth()
   uniforms.push_back(Uniform("maxD", depthCutoff));
 
   computePacks[ComputePack::FILTER]->compute(textures[GPUTexture::DEPTH_RAW]->texture, &uniforms);
+  TOCK("filterDepth");
 }
+
+//IMPROVE
+Eigen::Vector3f ElasticFusion::rodrigues2(const Eigen::Matrix3f& matrix)
+{
+  //NOTE super fast < 0.1ms. called per frame
+  Eigen::JacobiSVD<Eigen::Matrix3f> svd(matrix, Eigen::ComputeFullV | Eigen::ComputeFullU);
+  Eigen::Matrix3f R = svd.matrixU() * svd.matrixV().transpose();
+
+  double rx = R(2, 1) - R(1, 2);
+  double ry = R(0, 2) - R(2, 0);
+  double rz = R(1, 0) - R(0, 1);
+
+  double s = sqrt((rx*rx + ry*ry + rz*rz)*0.25);
+  double c = (R.trace() - 1) * 0.5;
+  c = c > 1. ? 1. : c < -1. ? -1. : c;
+
+  double theta = acos(c);
+
+  if( s < 1e-5 )
+  {
+    double t;
+
+    if( c > 0 )
+      rx = ry = rz = 0;
+    else
+    {
+      t = (R(0, 0) + 1)*0.5;
+      rx = sqrt( std::max(t, 0.0) );
+      t = (R(1, 1) + 1)*0.5;
+      ry = sqrt( std::max(t, 0.0) ) * (R(0, 1) < 0 ? -1.0 : 1.0);
+      t = (R(2, 2) + 1)*0.5;
+      rz = sqrt( std::max(t, 0.0) ) * (R(0, 2) < 0 ? -1.0 : 1.0);
+
+      if( fabs(rx) < fabs(ry) && fabs(rx) < fabs(rz) && (R(1, 2) > 0) != (ry*rz > 0) )
+        rz = -rz;
+      theta /= sqrt(rx*rx + ry*ry + rz*rz);
+      rx *= theta;
+      ry *= theta;
+      rz *= theta;
+    }
+  }
+  else
+  {
+    double vth = 1/(2*s);
+    vth *= theta;
+    rx *= vth; ry *= vth; rz *= vth;
+  }
+  return Eigen::Vector3d(rx, ry, rz).cast<float>();
+}
+
+//--------------------------- END OF FUNCS -------------------------------
 
 void ElasticFusion::normaliseDepth(const float & minVal, const float & maxVal)
 {
+  //NOTE currently not called in GUI - line ~490. should it be??
   std::vector<Uniform> uniforms;
 
   //NOTE again push_back dead af can't this be done a different way ?
@@ -943,55 +1011,6 @@ void ElasticFusion::savePly()
   fs.close ();
 
   delete [] mapData;
-}
-
-//NOTE understand these tings. Probably v fast but might not be...
-//V fast ! 0.01ms
-Eigen::Vector3f ElasticFusion::rodrigues2(const Eigen::Matrix3f& matrix)
-{
-  Eigen::JacobiSVD<Eigen::Matrix3f> svd(matrix, Eigen::ComputeFullV | Eigen::ComputeFullU);
-  Eigen::Matrix3f R = svd.matrixU() * svd.matrixV().transpose();
-
-  double rx = R(2, 1) - R(1, 2);
-  double ry = R(0, 2) - R(2, 0);
-  double rz = R(1, 0) - R(0, 1);
-
-  double s = sqrt((rx*rx + ry*ry + rz*rz)*0.25);
-  double c = (R.trace() - 1) * 0.5;
-  c = c > 1. ? 1. : c < -1. ? -1. : c;
-
-  double theta = acos(c);
-
-  if( s < 1e-5 )
-  {
-    double t;
-
-    if( c > 0 )
-      rx = ry = rz = 0;
-    else
-    {
-      t = (R(0, 0) + 1)*0.5;
-      rx = sqrt( std::max(t, 0.0) );
-      t = (R(1, 1) + 1)*0.5;
-      ry = sqrt( std::max(t, 0.0) ) * (R(0, 1) < 0 ? -1.0 : 1.0);
-      t = (R(2, 2) + 1)*0.5;
-      rz = sqrt( std::max(t, 0.0) ) * (R(0, 2) < 0 ? -1.0 : 1.0);
-
-      if( fabs(rx) < fabs(ry) && fabs(rx) < fabs(rz) && (R(1, 2) > 0) != (ry*rz > 0) )
-        rz = -rz;
-      theta /= sqrt(rx*rx + ry*ry + rz*rz);
-      rx *= theta;
-      ry *= theta;
-      rz *= theta;
-    }
-  }
-  else
-  {
-    double vth = 1/(2*s);
-    vth *= theta;
-    rx *= vth; ry *= vth; rz *= vth;
-  }
-  return Eigen::Vector3d(rx, ry, rz).cast<float>();
 }
 
 //NOTE below here are simple get functions --------------------------------------------------------------

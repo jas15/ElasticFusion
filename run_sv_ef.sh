@@ -4,4 +4,4 @@
 
 ./../Stopwatch/build/StopwatchViewer &
 
-./GUI/build/ElasticFusion -l ../dyson_lab.klg
+./GUI/build/ElasticFusion -fo -l ../dyson_lab.klg
