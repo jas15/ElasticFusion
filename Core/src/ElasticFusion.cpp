@@ -273,7 +273,7 @@ void ElasticFusion::computeFeedbackBuffers()
 //FRAME 1
 void ElasticFusion::processInitialFrame()
 {
-  //NOTE is it worth changing the things here? initial frame == once
+  //NOTE is it worth changing the things here? only called in initial frame
   //in real life the first frame wouldn't even matter that much surely
   //initialise some things
   computeFeedbackBuffers();
@@ -336,7 +336,67 @@ bool ElasticFusion::denseEnough(const Img<Eigen::Matrix<unsigned char, 3, 1>> & 
 }
 
 //IMPROVE
-//NOTE this is probably the most important function
+//NOTE this is the original func. sequentialFrame gets called from here. called in MainController.cpp
+//this will basically improve drastically when we improve the other functions below
+void ElasticFusion::processFrame(const unsigned char * rgb,
+    const unsigned short * depth,
+    const int64_t & timestamp,
+    const Eigen::Matrix4f * inPose,
+    const float weightMultiplier,
+    const bool bootstrap)
+{
+  TICK("Run"); //timer starts here
+
+  TICK("WholePreProcess"); //10ms
+  //Upload is a Pangolin thing so would that be the GUI aspect ?
+  textures[GPUTexture::DEPTH_RAW]->texture->Upload(depth, GL_LUMINANCE_INTEGER_EXT, GL_UNSIGNED_SHORT);
+  textures[GPUTexture::RGB]->texture->Upload(rgb, GL_RGB, GL_UNSIGNED_BYTE);
+
+  TICK("Preprocess"); //5.8-8.3ms
+
+  filterDepth(); //see line ~725. creates vector of uniforms based on current RGBD image then filters for max depth?
+  metriciseDepth(); //above filterDepth. similar but not using resolution. also DEPTH_FILTERED
+
+  TOCK("Preprocess");
+  TOCK("WholePreProcess");
+
+  //First run
+  if(tick == 1)
+  {
+    processInitialFrame();
+  }
+  else
+  {
+    processSequentialFrame(inPose, weightMultiplier, bootstrap);
+  }
+
+  //TICK("pushItBack"); //0.003ms
+  poseGraph.push_back(std::pair<unsigned long long int, Eigen::Matrix4f>(tick, currPose));
+  poseLogTimes.push_back(timestamp);
+  //TOCK("pushItBack");
+
+  //TICK("sampleGraph"); //2.2-4.3ms
+
+  localDeformation.sampleGraphModel(globalModel.model());
+  globalDeformation.sampleGraphFrom(localDeformation);
+
+  //TOCK("sampleGraph");
+
+  //TICK("predictFrame"); //9ms
+  predict();
+
+  if(!lost)
+  {
+    processFerns();
+    tick++;
+  }
+
+  //TOCK("predictFrame"); //9ms
+  TOCK("Run"); //ends here
+}
+
+//IMPROVE
+//NOTE this is probably the most important function. called by processFrame
 void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
                                             const float weightMultiplier,
                                             const bool bootstrap)
@@ -718,62 +778,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
 }
 
 //IMPROVE
-//NOTE this is the original func. sequentialFrame gets called from here. called in MainController.cpp
-void ElasticFusion::processFrame(const unsigned char * rgb,
-                                 const unsigned short * depth,
-                                 const int64_t & timestamp,
-                                 const Eigen::Matrix4f * inPose,
-                                 const float weightMultiplier,
-                                 const bool bootstrap)
-{
-  TICK("Run"); //timer starts here
-
-  TICK("WholePreProcess");
-  //Upload is a Pangolin thing so would that be the GUI aspect ?
-  textures[GPUTexture::DEPTH_RAW]->texture->Upload(depth, GL_LUMINANCE_INTEGER_EXT, GL_UNSIGNED_SHORT);
-  textures[GPUTexture::RGB]->texture->Upload(rgb, GL_RGB, GL_UNSIGNED_BYTE);
-
-  TICK("Preprocess"); //5.8-8.3ms
-
-  filterDepth(); //see line ~725. creates vector of uniforms based on current RGBD image then filters for max depth?
-  metriciseDepth(); //above filterDepth. similar but not using resolution. also DEPTH_FILTERED
-
-  TOCK("Preprocess");
-  TOCK("WholePreProcess");
-
-  //First run
-  if(tick == 1)
-  {
-    processInitialFrame();
-  }
-  else
-  {
-    processSequentialFrame(inPose, weightMultiplier, bootstrap);
-  }
-
-  poseGraph.push_back(std::pair<unsigned long long int, Eigen::Matrix4f>(tick, currPose));
-  poseLogTimes.push_back(timestamp);
-
-  TICK("sampleGraph"); //2.2-4.3ms
-
-  localDeformation.sampleGraphModel(globalModel.model());
-
-  globalDeformation.sampleGraphFrom(localDeformation);
-
-  TOCK("sampleGraph");
-
-  predict();
-
-  if(!lost)
-  {
-    processFerns();
-    tick++;
-  }
-
-  TOCK("Run"); //ends here
-}
-
-//IMPROVE
+//NOTE called by processFrame
 void ElasticFusion::processFerns()
 {
   //NOTE 1.4-4.6ms (2.9avg)
@@ -818,6 +823,7 @@ void ElasticFusion::predict()
 }
 
 //IMPROVE
+//NOTE called in processFrame. Not really sure what this does
 void ElasticFusion::metriciseDepth()
 {
   TICK("metriciseDepth"); //0.7-1.2ms. avg 0.8
@@ -826,6 +832,7 @@ void ElasticFusion::metriciseDepth()
   //NOTE there are a lot of push_back calls - what is being stored in here ? might be large data == slow
   uniforms.push_back(Uniform("maxD", depthCutoff));
 
+  //NOTE 0.7ms for these two computes
   computePacks[ComputePack::METRIC]->compute(textures[GPUTexture::DEPTH_RAW]->texture, &uniforms);
   computePacks[ComputePack::METRIC_FILTERED]->compute(textures[GPUTexture::DEPTH_FILTERED]->texture, &uniforms);
   TOCK("metriciseDepth");
@@ -842,11 +849,12 @@ void ElasticFusion::filterDepth()
   uniforms.push_back(Uniform("rows", (float)Resolution::getInstance().rows()));
   uniforms.push_back(Uniform("maxD", depthCutoff));
 
+  //NOTE this is 6ms ?!?!?!? why so diff. just bc there are 3 to do ? or wha. Might be the FILTER
   computePacks[ComputePack::FILTER]->compute(textures[GPUTexture::DEPTH_RAW]->texture, &uniforms);
   TOCK("filterDepth");
 }
 
-//IMPROVE
+//IMPROVE is there any point
 Eigen::Vector3f ElasticFusion::rodrigues2(const Eigen::Matrix3f& matrix)
 {
   //NOTE super fast < 0.1ms. called per frame

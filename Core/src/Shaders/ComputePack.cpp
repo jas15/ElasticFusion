@@ -24,13 +24,13 @@ const std::string ComputePack::METRIC = "METRIC";
 const std::string ComputePack::METRIC_FILTERED = "METRIC_FILTERED";
 
 ComputePack::ComputePack(std::shared_ptr<Shader> program,
-                         pangolin::GlTexture * target)
+             pangolin::GlTexture * target)
  : program(program),
    renderBuffer(Resolution::getInstance().width(), Resolution::getInstance().height()),
    target(target)
 {
-    frameBuffer.AttachColour(*target);
-    frameBuffer.AttachDepth(renderBuffer);
+  frameBuffer.AttachColour(*target);
+  frameBuffer.AttachDepth(renderBuffer);
 }
 
 ComputePack::~ComputePack()
@@ -38,36 +38,39 @@ ComputePack::~ComputePack()
 
 }
 
+//IMPROVE
+//NOTE called in ElasticFusion::metriciseDepth *and* filterDepth. Seems quick?
 void ComputePack::compute(pangolin::GlTexture * input, const std::vector<Uniform> * const uniforms)
 {
-    input->Bind();
+  input->Bind();
 
-    frameBuffer.Bind();
+  frameBuffer.Bind();
 
-    glPushAttrib(GL_VIEWPORT_BIT);
+  glPushAttrib(GL_VIEWPORT_BIT);
 
-    glViewport(0, 0, renderBuffer.width, renderBuffer.height);
+  glViewport(0, 0, renderBuffer.width, renderBuffer.height);
 
-    glClearColor(0, 0, 0, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    program->Bind();
+  program->Bind();
 
-    if(uniforms)
+  if(uniforms)
+  {
+    for(size_t i = 0; i < uniforms->size(); i++)
     {
-        for(size_t i = 0; i < uniforms->size(); i++)
-        {
-            program->setUniform(uniforms->at(i));
-        }
+      program->setUniform(uniforms->at(i));
     }
+  }
 
-    glDrawArrays(GL_POINTS, 0, 1);
+  //TODO is this needed? Creates GL_POINTS from somewhere but I can't work out what? assuming the uniforms?
+  glDrawArrays(GL_POINTS, 0, 1);
 
-    frameBuffer.Unbind();
+  frameBuffer.Unbind();
 
-    program->Unbind();
+  program->Unbind();
 
-    glPopAttrib();
+  glPopAttrib();
 
-    glFinish();
+  glFinish();
 }
