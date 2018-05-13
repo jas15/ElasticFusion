@@ -138,10 +138,10 @@ bool Ferns::addFrame(GPUTexture * imageTexture,
   delete [] coOccurrences;
 
   //TODO accuracy
-  TICK("goodCodes");
+  //TICK("goodCodes");
   if (frame->goodCodes < 0 || minimum <= threshold && frames.size() >= 0) {
     delete frame;
-    TOCK("goodCodes");
+    //TOCK("goodCodes");
     TOCK("Ferns::AddFrame");
     return false;
   }
@@ -156,7 +156,7 @@ bool Ferns::addFrame(GPUTexture * imageTexture,
 
   frames.push_back(frame);
 
-  TOCK("goodCodes");
+  //TOCK("goodCodes");
   TOCK("Ferns::AddFrame");
   return true;
 

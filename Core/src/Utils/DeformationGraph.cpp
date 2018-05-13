@@ -458,13 +458,13 @@ bool DeformationGraph::optimiseGraphSparse(float & error, float & meanConsErr, c
 {
     assert(initialised);
 
-    TICK("opt");
+    //TICK("opt");
 
     meanConsErr = nonRelativeConstraintError();
 
     if(fernMatch && meanConsErr < 0.06)
     {
-        TOCK("opt");
+        //TOCK("opt");
         return false;
     }
 
@@ -525,7 +525,7 @@ bool DeformationGraph::optimiseGraphSparse(float & error, float & meanConsErr, c
 
     cholesky->freeFactor();
 
-    TOCK("opt");
+    //TOCK("opt");
 
     meanConsErr = nonRelativeConstraintError();
 

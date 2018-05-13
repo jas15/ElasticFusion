@@ -114,7 +114,7 @@ ElasticFusion::~ElasticFusion()
   std::string fname = saveFilename;
   fname.append(".freiburg");
 
-  TICK("poseGraphSize"); //TODO remove
+  //TICK("poseGraphSize"); //TODO remove
   std::ofstream f;
   f.open(fname.c_str(), std::fstream::out);
 
@@ -140,9 +140,9 @@ ElasticFusion::~ElasticFusion()
   }
 
   f.close();
-  TOCK("poseGraphSize"); //TODO remove
+  //TOCK("poseGraphSize"); //TODO remove
 
-  TICK("deleteThings");
+  //TICK("deleteThings");
   //delete every texture
   for(std::map<std::string, GPUTexture*>::iterator it = textures.begin(); it != textures.end(); ++it)
   {
@@ -166,7 +166,7 @@ ElasticFusion::~ElasticFusion()
   }
 
   feedbackBuffers.clear();
-  TOCK("deleteThings");
+  //TOCK("deleteThings");
 }
 
 //INIT
@@ -257,7 +257,7 @@ void ElasticFusion::createFeedbackBuffers()
 void ElasticFusion::computeFeedbackBuffers()
 {
   //NOTE computeFeedbackBuffers takes 2.245ms. only called in initial frame
-  TICK("feedbackBuffers");
+  //TICK("feedbackBuffers");
   feedbackBuffers[FeedbackBuffer::RAW]->compute(textures[GPUTexture::RGB]->texture,
                                                 textures[GPUTexture::DEPTH_METRIC]->texture,
                                                 tick,
@@ -267,7 +267,7 @@ void ElasticFusion::computeFeedbackBuffers()
                                                      textures[GPUTexture::DEPTH_METRIC_FILTERED]->texture,
                                                      tick,
                                                      maxDepthProcessed);
-  TOCK("feedbackBuffers");
+  //TOCK("feedbackBuffers");
 }
 
 //FRAME 1
@@ -375,14 +375,14 @@ void ElasticFusion::processFrame(const unsigned char * rgb,
   poseLogTimes.push_back(timestamp);
   //TOCK("pushItBack");
 
-  //TICK("sampleGraph"); //2.2-4.3ms
+  TICK("sampleGraph"); //2.2-4.3ms
 
   localDeformation.sampleGraphModel(globalModel.model());
   globalDeformation.sampleGraphFrom(localDeformation);
 
-  //TOCK("sampleGraph");
+  TOCK("sampleGraph");
 
-  //TICK("predictFrame"); //9ms
+  TICK("predictFrame"); //9ms
   predict();
 
   if(!lost)
@@ -391,9 +391,11 @@ void ElasticFusion::processFrame(const unsigned char * rgb,
     tick++;
   }
 
-  //TOCK("predictFrame"); //9ms
+  TOCK("predictFrame"); //9ms
   TOCK("Run"); //ends here
 }
+
+//----------------- should improve between here --------------------
 
 //IMPROVE
 //NOTE this is probably the most important function. called by processFrame
@@ -401,20 +403,21 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
                                             const float weightMultiplier,
                                             const bool bootstrap)
 {
-  TICK("processSeq"); //NOTE 120-160ms == 75% of Run
+  //TICK("processSeq"); //NOTE 120-160ms == 75% of Run
   Eigen::Matrix4f lastPose = currPose;
-
   bool trackingOk = true;
 
-  if(bootstrap || !inPose)
+  //NOTE changed this. was bootstrap first
+  //this big if stmt is about 40ms
+  if (!inPose || bootstrap)
   {
-    TICK("autoFill");
+    //TICK("autoFill");//0.3-1ms
     resize.image(indexMap.imageTex(), imageBuff);
     bool shouldFillIn = !denseEnough(imageBuff);
-    TOCK("autoFill");
+    //TOCK("autoFill");
 
     //initialise the odometrics for each frame
-    TICK("odomInit");
+    //TICK("odomInit"); //8.9-11.9ms
     //WARNING initICP* must be called before initRGB*
     frameToModel.initICPModel(shouldFillIn ? &fillIn.vertexTexture : indexMap.vertexTex(),
         shouldFillIn ? &fillIn.normalTexture : indexMap.normalTex(),
@@ -423,7 +426,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
 
     frameToModel.initICP(textures[GPUTexture::DEPTH_FILTERED], maxDepthProcessed);
     frameToModel.initRGB(textures[GPUTexture::RGB]);
-    TOCK("odomInit");
+    //TOCK("odomInit");
 
     if(bootstrap)
     {
@@ -434,7 +437,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
     Eigen::Vector3f trans = currPose.topRightCorner(3, 1);
     Eigen::Matrix<float, 3, 3, Eigen::RowMajor> rot = currPose.topLeftCorner(3, 3);
 
-    TICK("odom");
+    //TICK("odom"); //27.8-31.6
     //NOTE function in Utils/RGBDOdometry
     frameToModel.getIncrementalTransformation(trans,
         rot,
@@ -443,15 +446,18 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
         pyramid,
         fastOdom,
         so3);
-    TOCK("odom");
+    //TOCK("odom");
 
     trackingOk = !reloc || frameToModel.lastICPError < 1e-04;
 
     if(reloc)
     {
+      //NOTE maybe I can extract the things from the if else below ? probs wont make a difference
+      //to performance but looks nicer
       if(!lost)
       {
         Eigen::MatrixXd covariance = frameToModel.getCovariance();
+        //TODO same as the while below ??
 
         for(int i = 0; i < 6; i++)
         {
@@ -481,6 +487,12 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
       else if(lastFrameRecovery)
       {
         Eigen::MatrixXd covariance = frameToModel.getCovariance();
+        //TODO can this just change to a while cmon
+        //int i (0);
+        //while (trackingOk && i < 6)
+        //{
+        //  trackingOk = covariance(i,i) > 1e-04;
+        //}
 
         for(int i = 0; i < 6; i++)
         {
@@ -514,12 +526,11 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
   Eigen::Vector3f diffTrans = diff.topRightCorner(3, 1);
   Eigen::Matrix3f diffRot = diff.topLeftCorner(3, 3);
 
-  //NOTE tried improving the small math but doesn't really get quicker
   //Weight by velocity
-  float largest = 0.01;
-  float minWeight = 0.5;
-
-  float weighting = std::max(diffTrans.norm(), rodrigues2(diffRot).norm());
+  //NOTE tried improving the small math but doesn't really get quicker
+  float largest (0.01);
+  float minWeight (0.5);
+  float weighting (std::max(diffTrans.norm(), rodrigues2(diffRot).norm()));
 
   if(weighting > largest)
   {
@@ -530,8 +541,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
 
   std::vector<Ferns::SurfaceConstraint> constraints;
 
-  //line 686
-  predict();
+  predict(); //line 686
 
   Eigen::Matrix4f recoveryPose = currPose;
 
@@ -544,7 +554,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
   {
     lastFrameRecovery = false;
 
-    TICK("Ferns::findFrame");
+    //TICK("Ferns::findFrame"); //2ms
     recoveryPose = ferns.findFrame(constraints,
         currPose,
         &fillIn.vertexTexture,
@@ -552,7 +562,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
         &fillIn.imageTexture,
         tick,
         lost);
-    TOCK("Ferns::findFrame");
+    //TOCK("Ferns::findFrame");
 
     //CLOSELOOPS TRUE
     //NOTE could do lazy eval? which is more likely to be false (implemented)
@@ -566,6 +576,10 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
       }
       else
       {
+        //printf("Constraint size = %d\n", constraints.size());
+        //printf("Relative constraint size = %d\n", relativeCons.size());
+        //Can we combine the two loops? only do each thing if they're less than .size()
+
         //TODO big loops
         for(size_t i = 0; i < constraints.size(); i++)
         {
@@ -575,7 +589,6 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
               ferns.frames.at(ferns.lastClosest)->srcTime,
               true);
         }
-
         for(size_t i = 0; i < relativeCons.size(); i++)
         {
           globalDeformation.addConstraint(relativeCons.at(i));
@@ -599,21 +612,15 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
     //NOTE lazy eval. changed the order of this. was rawGraph @ end
     if(rawGraph.size() == 0 && !lost) //CLOSELOOPS TRUE
     {
-      TICK("closeLoops bit"); //~80ms
+      //TICK("closeLoops bit"); //~80ms
       //NOTE goes in here
       //Only predict old view, since we just predicted the current view for the ferns (which failed!)
-      TICK("IndexMap::INACTIVE"); //~5ms
-      indexMap.combinedPredict(currPose,
-          globalModel.model(),
-          maxDepthProcessed,
-          confidenceThreshold,
-          0,
-          tick - timeDelta,
-          timeDelta,
-          IndexMap::INACTIVE);
-      TOCK("IndexMap::INACTIVE");
+      //TICK("IndexMap::INACTIVE"); //~5ms
+      indexMap.combinedPredict(currPose, globalModel.model(), maxDepthProcessed,
+          confidenceThreshold, 0, tick - timeDelta, timeDelta, IndexMap::INACTIVE);
+      //TOCK("IndexMap::INACTIVE");
 
-      TICK("closeLoops::1"); //~10ms
+      //TICK("closeLoops::1"); //~10ms
       //WARNING initICP* must be called before initRGB*
       modelToModel.initICPModel(indexMap.oldVertexTex(), indexMap.oldNormalTex(), maxDepthProcessed, currPose);
       modelToModel.initRGBModel(indexMap.oldImageTex());
@@ -623,7 +630,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
 
       Eigen::Vector3f trans = currPose.topRightCorner(3, 1);
       Eigen::Matrix<float, 3, 3, Eigen::RowMajor> rot = currPose.topLeftCorner(3, 3);
-      TOCK("closeLoops::1");
+      //TOCK("closeLoops::1");
 
       //TICK("closeLoops::2"); //~60ms
       //NOTE func in RGBDOdometry
@@ -647,15 +654,17 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
         covOk = covar(i,i) > covThresh;
         i++;
       }
-      //for(int i = 0; i < 6; i++)
-      //{
-      //  if(covar(i, i) > covThresh)
-      //  {
-      //    covOk = false;
-      //    break;
-      //  }
-      //}
-      TOCK("closeLoops bit");
+      /*
+      for(int i = 0; i < 6; i++)
+      {
+        if(covar(i, i) > covThresh)
+        {
+          covOk = false;
+          break;
+        }
+      }
+      */
+      //TOCK("closeLoops bit");
 
       Eigen::Matrix4f estPose = Eigen::Matrix4f::Identity();
 
@@ -703,6 +712,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
         std::vector<Deformation::Constraint> newRelativeCons;
 
         //NOTE doesn't reach here
+        //---------------------------------------------------------------------
         if(localDeformation.constrain(ferns.frames, rawGraph, tick, false, poseGraph, false, &newRelativeCons))
         {
           poseMatches.push_back(PoseMatch(ferns.frames.size() - 1, ferns.frames.size(), estPose, currPose, constraints, false));
@@ -725,32 +735,24 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
   //TODO lazy eval
   if(!rgbOnly && trackingOk && !lost)
   {
-    TICK("indexMap");
+    //TICK("indexMap");//3.1-3.7ms
     indexMap.predictIndices(currPose, tick, globalModel.model(), maxDepthProcessed, timeDelta);
-    TOCK("indexMap");
+    //TOCK("indexMap");
 
-    globalModel.fuse(currPose,
-        tick,
-        textures[GPUTexture::RGB],
-        textures[GPUTexture::DEPTH_METRIC],
-        textures[GPUTexture::DEPTH_METRIC_FILTERED],
-        indexMap.indexTex(),
-        indexMap.vertConfTex(),
-        indexMap.colorTimeTex(),
-        indexMap.normalRadTex(),
-        maxDepthProcessed,
-        confidenceThreshold,
-        weighting);
+    globalModel.fuse(currPose, tick, textures[GPUTexture::RGB], textures[GPUTexture::DEPTH_METRIC],
+        textures[GPUTexture::DEPTH_METRIC_FILTERED], indexMap.indexTex(), indexMap.vertConfTex(),
+        indexMap.colorTimeTex(), indexMap.normalRadTex(), maxDepthProcessed, confidenceThreshold, weighting);
 
-    TICK("indexMap");
+    //TICK("indexMap2");//3.1-4.2ms
     //TODO why are we doing the same thing twice ????? hm
     indexMap.predictIndices(currPose, tick, globalModel.model(), maxDepthProcessed, timeDelta);
-    TOCK("indexMap");
+    //TOCK("indexMap2");
 
     //If we're deforming we need to predict the depth again to figure out which
     //points to update the timestamp's of, since a deformation means a second pose update
     //this loop
-    if(rawGraph.size() > 0 && !fernAccepted)
+    //NOTE was fernAccepted at end
+    if(!fernAccepted && rawGraph.size() > 0)
     {
       indexMap.synthesizeDepth(currPose,
           globalModel.model(),
@@ -761,20 +763,10 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
           std::numeric_limits<unsigned short>::max());
     }
 
-    globalModel.clean(currPose,
-        tick,
-        indexMap.indexTex(),
-        indexMap.vertConfTex(),
-        indexMap.colorTimeTex(),
-        indexMap.normalRadTex(),
-        indexMap.depthTex(),
-        confidenceThreshold,
-        rawGraph,
-        timeDelta,
-        maxDepthProcessed,
-        fernAccepted);
+    globalModel.clean(currPose, tick, indexMap.indexTex(), indexMap.vertConfTex(), indexMap.colorTimeTex(),
+        indexMap.normalRadTex(), indexMap.depthTex(), confidenceThreshold, rawGraph, timeDelta, maxDepthProcessed, fernAccepted);
   }
-  TOCK("processSeq");
+  //TOCK("processSeq");
 }
 
 //IMPROVE
@@ -853,6 +845,8 @@ void ElasticFusion::filterDepth()
   computePacks[ComputePack::FILTER]->compute(textures[GPUTexture::DEPTH_RAW]->texture, &uniforms);
   TOCK("filterDepth");
 }
+
+//--------------------------- and here ------------------------
 
 //IMPROVE is there any point
 Eigen::Vector3f ElasticFusion::rodrigues2(const Eigen::Matrix3f& matrix)
