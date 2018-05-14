@@ -22,7 +22,7 @@
 #include "Shaders.h"
 #include "../Utils/Resolution.h"
 #include "Uniform.h"
-#include <pangolin/gl/gl.h>
+//#include <pangolin/gl/gl.h>
 
 class ComputePack
 {

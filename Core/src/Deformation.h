@@ -29,7 +29,7 @@
 #include "Ferns.h"
 #include "Defines.h"
 
-#include <pangolin/gl/gl.h>
+//#include <pangolin/gl/gl.h>
 
 class Deformation
 {
