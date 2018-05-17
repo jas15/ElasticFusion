@@ -96,7 +96,7 @@ l8="Cflags: -I\${includedir}"
 l9="Libs: -L\${libdir} -lOpenNI2 -L\${libdir}/OpenNI2/Drivers -lDummyDevice -lOniFile -lPS1080.so"
 configwrite="$l1\n$l2\n$l3\n$l4\n\n$l5\n$l6\n$l7\n$l8\n$l9"
 #Then print to the correct file
-sudo echo -e "$configwrite" >> /usr/lib/pkgconfig/libopenni2.pc
+echo -e "$configwrite" | sudo tee /usr/lib/pkgconfig/libopenni2.pc > /dev/null
 
 echo "Checking config file..."
 echo "Below output should be 2.2.0.0. Something wrong if not."
@@ -106,6 +106,7 @@ pkg-config --modversion libopenni2
 cd Packaging/Linux
 sudo cp primesense-usb.rules /etc/udev/rules.d/557-primesense-usb.rules
 
+cd ../../../
 #Moving on...
 
 #Actually build ElasticFusion
