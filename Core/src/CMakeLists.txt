@@ -6,14 +6,42 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
 
 find_package(Pangolin 0.1 REQUIRED)
 find_package(CUDA REQUIRED)
-find_package(SuiteSparse REQUIRED)
+#find_package(SUITESPARSE REQUIRED)
+
+#...
+
+# ------------------------------------------------------------------
+# Detect SUITESPARSE libraries:
+# If not found automatically, set SUITESPARSE_DIR in CMake to the 
+# directory where SUITESPARSE was built.
+# ------------------------------------------------------------------
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}") # Add the directory where FindSUITESPARSE.cmake module can be found.
+
+set(SUITESPARSE_USE_LAPACK_BLAS ON)
+find_package(SUITESPARSE QUIET NO_MODULE)  # 1st: Try to locate the *config.cmake file.
+if(NOT SUITESPARSE_FOUND)
+  set(SUITESPARSE_VERBOSE ON)
+  find_package(SUITESPARSE REQUIRED) # 2nd: Use FindSUITESPARSE.cmake module
+  include_directories(${SUITESPARSE_INCLUDE_DIRS})
+else()
+  message(STATUS "Find SUITESPARSE : include(${USE_SUITESPARSE})")
+  include(${USE_SUITESPARSE})
+endif()
+
+MESSAGE(STATUS "SUITESPARSE_LIBS: ${SUITESPARSE_LIBRARIES}")
+# ------------------------------------------------------------------
+#   End of SUITESPARSE detection
+# ------------------------------------------------------------------
+
+#...
+
 
 set(efusion_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Shaders" CACHE PATH "Where the shaders live")
 
 include_directories(${Pangolin_INCLUDE_DIRS})
 include_directories(${CUDA_INCLUDE_DIRS})
 include_directories(${EIGEN_INCLUDE_DIRS})
-include_directories(${SUITESPARSE_INCLUDE_DIRS})
+#include_directories(${SUITESPARSE_INCLUDE_DIRS})
 
 file(GLOB srcs *.cpp)
 file(GLOB utils_srcs Utils/*.cpp)

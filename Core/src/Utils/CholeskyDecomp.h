@@ -19,7 +19,7 @@
 #ifndef UTILS_CHOLESKYDECOMP_H_
 #define UTILS_CHOLESKYDECOMP_H_
 
-#include <cholmod.h>
+#include <suitesparse/cholmod.h>
 #include <Eigen/Core>
 
 #include "Jacobian.h"
