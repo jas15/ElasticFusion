@@ -53,6 +53,8 @@
 #include "convenience.cuh"
 #include "operators.cuh"
 
+#define FULL_MASK 0xffffffff
+
 #if __CUDA_ARCH__ < 300
 __inline__ __device__
 float __shfl_down(float val, int offset, int width = 32)
