@@ -34,6 +34,7 @@ FIND_PATH( SUITESPARSE_LIBRARY_DIR
                 /usr/lib64
                 /usr/lib/x86_64-linux-gnu
                 /usr/lib/i386-linux-gnu
+                /usr/lib/aarch64-linux-gnu
                 /usr/local/lib )
 
    # Add cholmod include directory to collection include directories
