@@ -45,7 +45,9 @@ if(WIN32)
   set(ADDITIONAL_CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 endif()
 
-set(CMAKE_CXX_FLAGS ${ADDITIONAL_CMAKE_CXX_FLAGS} "-Ofast -Wall -std=c++11 -DSHADER_DIR=${efusion_SHADER_DIR}")
+set(CMAKE_OPT_FLAGS "-fno-defer-pop -ffp-contract=fast -finline-limit=100 -fmerge-all-constants -fmodulo-sched -fmodulo-sched-allow-regmoves -fgcse-sm -fgcse-las -fgcse-after-reload -fdeclone-ctor-dtor -flive-range-shrinkage -fira-hoist-pressure -fira-loop-pressure -fsched-pressure -fsched-spec-load -fsched-spec-load-dangerous -fsched-stalled-insns=0 -fsched-stalled-insns-dep=1 -fsched2-use-superblocks -freschedule-modulo-scheduled-loops -fselective-scheduling2 -fsel-sched-pipelining -fsel-sched-pipelining-outer-loops -fipa-pta -floop-nest-optimize -floop-parallelize-all -ftree-vectorize")
+
+set(CMAKE_CXX_FLAGS ${ADDITIONAL_CMAKE_CXX_FLAGS} "-Ofast -Wall -std=c++11 -DSHADER_DIR=${efusion_SHADER_DIR} ${CMAKE_OPT_FLAGS}")
 #set(CMAKE_CXX_FLAGS ${ADDITIONAL_CMAKE_CXX_FLAGS} "-O3 -msse2 -msse3 -Wall -std=c++11 -DSHADER_DIR=${efusion_SHADER_DIR}")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -std=c++11 -DSHADER_DIR=${efusion_SHADER_DIR}")
   
