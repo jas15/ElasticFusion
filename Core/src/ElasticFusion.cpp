@@ -226,14 +226,14 @@ void ElasticFusion::createCompute()
   std::string eV ("empty.vert");
   std::string qG ("quad.geom");
 
-  computePacks[ComputePack::NORM] = new ComputePack(loadProgramFromFile(eV, "depth_norm.frag", qG),
-                                                    textures[GPUTexture::DEPTH_NORM]->texture);
+  computePacks[ComputePack::NORM]            = new ComputePack(loadProgramFromFile(eV, "depth_norm.frag", qG),
+                                                               textures[GPUTexture::DEPTH_NORM]->texture);
 
-  computePacks[ComputePack::FILTER] = new ComputePack(loadProgramFromFile(eV, "depth_bilateral.frag", qG),
-                                                      textures[GPUTexture::DEPTH_FILTERED]->texture);
+  computePacks[ComputePack::FILTER]          = new ComputePack(loadProgramFromFile(eV, "depth_bilateral.frag", qG),
+                                                               textures[GPUTexture::DEPTH_FILTERED]->texture);
 
-  computePacks[ComputePack::METRIC] = new ComputePack(loadProgramFromFile(eV, "depth_metric.frag", qG),
-                                                      textures[GPUTexture::DEPTH_METRIC]->texture);
+  computePacks[ComputePack::METRIC]          = new ComputePack(loadProgramFromFile(eV, "depth_metric.frag", qG),
+                                                               textures[GPUTexture::DEPTH_METRIC]->texture);
 
   computePacks[ComputePack::METRIC_FILTERED] = new ComputePack(loadProgramFromFile(eV, "depth_metric.frag", qG),
                                                                textures[GPUTexture::DEPTH_METRIC_FILTERED]->texture);
@@ -492,6 +492,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
         //while (trackingOk && i < 6)
         //{
         //  trackingOk = covariance(i,i) > 1e-04;
+        //  i++;
         //}
 
         for(int i = 0; i < 6; i++)
@@ -580,7 +581,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
         //printf("Relative constraint size = %d\n", relativeCons.size());
         //Can we combine the two loops? only do each thing if they're less than .size()
 
-        //TODO big loops
+        //TODO big loops - can we vectorize or does it already do it with compiler?
         for(size_t i = 0; i < constraints.size(); i++)
         {
           globalDeformation.addConstraint(constraints.at(i).sourcePoint,
@@ -589,12 +590,12 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
               ferns.frames.at(ferns.lastClosest)->srcTime,
               true);
         }
+
         for(size_t i = 0; i < relativeCons.size(); i++)
         {
           globalDeformation.addConstraint(relativeCons.at(i));
         }
 
-        //TODO maybe lazy eval within this func?
         if(globalDeformation.constrain(ferns.frames, rawGraph, tick, true, poseGraph, true))
         {
           currPose = recoveryPose;
@@ -610,7 +611,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
 
     //If we didn't match to a fern
     //NOTE lazy eval. changed the order of this. was rawGraph @ end
-    if(rawGraph.size() == 0 && !lost) //CLOSELOOPS TRUE
+    if(!rawGraph.size() && !lost) //CLOSELOOPS TRUE !rawGraph.size() used to be ...size() == 0
     {
       //TICK("closeLoops bit"); //~80ms
       //NOTE goes in here
@@ -680,31 +681,34 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
         resize.time(indexMap.oldTimeTex(), timesBuff);
 
         //NOTE this is HUUUUGE each and every time - dont think it can change tho wah
+        //could vectorize but wouldn't be worth it as no call to it
         for(int i = 0; i < consBuff.cols; i++)
         {
           for(int j = 0; j < consBuff.rows; j++)
           {
             if(consBuff.at<Eigen::Vector4f>(j, i)(2) > 0 &&
-                consBuff.at<Eigen::Vector4f>(j, i)(2) < maxDepthProcessed &&
-                timesBuff.at<unsigned short>(j, i) > 0)
+               consBuff.at<Eigen::Vector4f>(j, i)(2) < maxDepthProcessed &&
+               timesBuff.at<unsigned short>(j, i) > 0)
             {
-              Eigen::Vector4f worldRawPoint = currPose * Eigen::Vector4f(consBuff.at<Eigen::Vector4f>(j, i)(0),
-                  consBuff.at<Eigen::Vector4f>(j, i)(1),
-                  consBuff.at<Eigen::Vector4f>(j, i)(2),
-                  1.0f);
+              Eigen::Vector4f worldRawPoint 
+                      = currPose * Eigen::Vector4f(consBuff.at<Eigen::Vector4f>(j, i)(0),
+                                                   consBuff.at<Eigen::Vector4f>(j, i)(1),
+                                                   consBuff.at<Eigen::Vector4f>(j, i)(2),
+                                                   1.0f);
 
-              Eigen::Vector4f worldModelPoint = estPose * Eigen::Vector4f(consBuff.at<Eigen::Vector4f>(j, i)(0),
-                  consBuff.at<Eigen::Vector4f>(j, i)(1),
-                  consBuff.at<Eigen::Vector4f>(j, i)(2),
-                  1.0f);
+              Eigen::Vector4f worldModelPoint 
+                      = estPose * Eigen::Vector4f(consBuff.at<Eigen::Vector4f>(j, i)(0),
+                                                  consBuff.at<Eigen::Vector4f>(j, i)(1),
+                                                  consBuff.at<Eigen::Vector4f>(j, i)(2),
+                                                  1.0f);
 
               constraints.push_back(Ferns::SurfaceConstraint(worldRawPoint, worldModelPoint));
 
               localDeformation.addConstraint(worldRawPoint,
-                  worldModelPoint,
-                  tick,
-                  timesBuff.at<unsigned short>(j, i),
-                  deforms == 0);
+                                             worldModelPoint,
+                                             tick,
+                                             timesBuff.at<unsigned short>(j, i),
+                                             deforms == 0);
             }
           }
         }
@@ -721,6 +725,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
 
           currPose = estPose;
 
+          //NOTE why 3 ? magic numbers are poo
           for(size_t i = 0; i < newRelativeCons.size(); i += newRelativeCons.size() / 3)
           {
             relativeCons.push_back(newRelativeCons.at(i));
@@ -752,7 +757,7 @@ void ElasticFusion::processSequentialFrame(const Eigen::Matrix4f * inPose,
     //points to update the timestamp's of, since a deformation means a second pose update
     //this loop
     //NOTE was fernAccepted at end
-    if(!fernAccepted && rawGraph.size() > 0)
+    if(!fernAccepted && rawGraph.size()) //NOTE was size() > 0
     {
       indexMap.synthesizeDepth(currPose,
           globalModel.model(),
@@ -912,6 +917,7 @@ void ElasticFusion::normaliseDepth(const float & minVal, const float & maxVal)
 }
 
 //NOTE this is not called within run()
+//BUT this is what you want to call to save the map
 void ElasticFusion::savePly()
 {
   std::string filename = saveFilename;
