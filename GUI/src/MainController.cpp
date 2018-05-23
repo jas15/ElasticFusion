@@ -586,8 +586,6 @@ void MainController::run()
   eFusion->savePly();
   pangolin::QuitAll();
 
-  std::cout << "Get that tick boy!!\n" << std::endl;
-
   //TODO unsure if this actually works hurmmmm
   //if it doesnt will basically have to run 2 tests for each thing, one with gui and one w/o
   /*if (!logReader->hasMore())
