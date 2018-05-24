@@ -47,8 +47,8 @@ class LogReader
            decompressionBufferDepth(0),
            decompressionBufferImage(0),
            file(file),
-           width(Resolution::getInstance().width()),
-           height(Resolution::getInstance().height()),
+           width(RES_WIDTH),
+           height(RES_HEIGHT),
            numPixels(width * height)
         {}
 

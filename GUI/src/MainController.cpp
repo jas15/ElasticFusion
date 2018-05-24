@@ -34,7 +34,7 @@ MainController::MainController(int argc, char * argv[])
   std::string calibrationFile;
   Parse::get().arg(argc, argv, "-cal", calibrationFile);
 
-  Resolution::getInstance(640, 480); //NOTE can I change this? I feel like I can't as that's VGA == sensor
+  Resolution::getInstance(RES_WIDTH, RES_HEIGHT); //NOTE can I change this? I feel like I can't as that's VGA == sensor
 
   if(calibrationFile.length())
   {
@@ -124,10 +124,10 @@ MainController::MainController(int argc, char * argv[])
   gui->so3->Ref().Set(so3);
   gui->frameToFrameRGB->Ref().Set(frameToFrameRGB);
 
-  resizeStream = new Resize(Resolution::getInstance().width(),
-                Resolution::getInstance().height(),
-                Resolution::getInstance().width() / 2,
-                Resolution::getInstance().height() / 2);
+  resizeStream = new Resize(RES_WIDTH,
+                RES_HEIGHT,
+                RES_WIDTH / 2,
+                RES_HEIGHT / 2);
 }
 
 MainController::~MainController()

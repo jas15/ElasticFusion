@@ -24,7 +24,7 @@ const std::string FeedbackBuffer::FILTERED = "FILTERED";
 FeedbackBuffer::FeedbackBuffer(std::shared_ptr<Shader> program)
  : program(program),
    drawProgram(loadProgramFromFile("draw_feedback.vert", "draw_feedback.frag")),
-   bufferSize(Resolution::getInstance().numPixels() * Vertex::SIZE),
+   bufferSize(RES_PIXELS * Vertex::SIZE),
    count(0)
 {
     float * vertices = new float[bufferSize];
@@ -41,12 +41,12 @@ FeedbackBuffer::FeedbackBuffer(std::shared_ptr<Shader> program)
 
     std::vector<Eigen::Vector2f> uv;
 
-    for(int i = 0; i < Resolution::getInstance().width(); i++)
+    for(int i = 0; i < RES_WIDTH; i++)
     {
-        for(int j = 0; j < Resolution::getInstance().height(); j++)
+        for(int j = 0; j < RES_HEIGHT; j++)
         {
-            uv.push_back(Eigen::Vector2f(((float)i / (float)Resolution::getInstance().width()) + 1.0 / (2 * (float)Resolution::getInstance().width()),
-                                   ((float)j / (float)Resolution::getInstance().height()) + 1.0 / (2 * (float)Resolution::getInstance().height())));
+            uv.push_back(Eigen::Vector2f(((float)i / (float)RES_WIDTH) + 1.0 / (2 * (float)RES_WIDTH),
+                                   ((float)j / (float)RES_HEIGHT) + 1.0 / (2 * (float)RES_HEIGHT)));
         }
     }
 
@@ -93,8 +93,8 @@ void FeedbackBuffer::compute(pangolin::GlTexture * color,
 
     program->setUniform(Uniform("cam", cam));
     program->setUniform(Uniform("threshold", 0.0f));
-    program->setUniform(Uniform("cols", (float)Resolution::getInstance().cols()));
-    program->setUniform(Uniform("rows", (float)Resolution::getInstance().rows()));
+    program->setUniform(Uniform("cols", (float)RES_WIDTH));
+    program->setUniform(Uniform("rows", (float)RES_HEIGHT));
     program->setUniform(Uniform("time", time));
     program->setUniform(Uniform("gSampler", 0));
     program->setUniform(Uniform("cSampler", 1));
@@ -118,7 +118,7 @@ void FeedbackBuffer::compute(pangolin::GlTexture * color,
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, color->tid);
 
-    glDrawArrays(GL_POINTS, 0, Resolution::getInstance().numPixels());
+    glDrawArrays(GL_POINTS, 0, RES_PIXELS);
 
     glBindTexture(GL_TEXTURE_2D, 0);
 

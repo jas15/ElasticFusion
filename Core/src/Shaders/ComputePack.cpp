@@ -26,7 +26,7 @@ const std::string ComputePack::METRIC_FILTERED = "METRIC_FILTERED";
 ComputePack::ComputePack(std::shared_ptr<Shader> program,
              pangolin::GlTexture * target)
  : program(program),
-   renderBuffer(Resolution::getInstance().width(), Resolution::getInstance().height()),
+   renderBuffer(RES_WIDTH, RES_HEIGHT),
    target(target)
 {
   frameBuffer.AttachColour(*target);

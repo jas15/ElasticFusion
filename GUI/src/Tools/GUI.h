@@ -245,8 +245,8 @@ class GUI
             Eigen::Matrix3f Kinv = K.inverse();
 
             pangolin::glDrawFrustrum(Kinv,
-                                     Resolution::getInstance().width(),
-                                     Resolution::getInstance().height(),
+                                     RES_WIDTH,
+                                     RES_HEIGHT,
                                      pose,
                                      0.1f);
         }

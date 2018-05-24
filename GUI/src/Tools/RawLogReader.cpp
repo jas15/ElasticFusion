@@ -32,8 +32,8 @@ RawLogReader::RawLogReader(std::string file, bool flipColors)
 
     depthReadBuffer = new unsigned char[numPixels * 2];
     imageReadBuffer = new unsigned char[numPixels * 3];
-    decompressionBufferDepth = new Bytef[Resolution::getInstance().numPixels() * 2];
-    decompressionBufferImage = new Bytef[Resolution::getInstance().numPixels() * 3];
+    decompressionBufferDepth = new Bytef[RES_PIXELS * 2];
+    decompressionBufferImage = new Bytef[RES_PIXELS * 3];
 }
 
 RawLogReader::~RawLogReader()
@@ -134,7 +134,7 @@ void RawLogReader::getCore()
 
     if(flipColors)
     {
-        for(int i = 0; i < Resolution::getInstance().numPixels() * 3; i += 3)
+        for(int i = 0; i < RES_PIXELS * 3; i += 3)
         {
             std::swap(rgb[i + 0], rgb[i + 2]);
         }

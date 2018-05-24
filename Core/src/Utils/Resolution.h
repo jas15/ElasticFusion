@@ -23,6 +23,10 @@
 
 #include "../Defines.h"
 
+#define RES_WIDTH 640
+#define RES_HEIGHT 480
+#define RES_PIXELS (RES_WIDTH * RES_HEIGHT)
+
 class Resolution
 {
     public:

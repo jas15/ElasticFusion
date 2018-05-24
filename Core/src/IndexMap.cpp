@@ -22,90 +22,90 @@ const int IndexMap::FACTOR = 1;
 
 IndexMap::IndexMap()
 : indexProgram(loadProgramFromFile("index_map.vert", "index_map.frag")),
-  indexRenderBuffer(Resolution::getInstance().width() * IndexMap::FACTOR, Resolution::getInstance().height() * IndexMap::FACTOR),
-  indexTexture(Resolution::getInstance().width() * IndexMap::FACTOR,
-               Resolution::getInstance().height() * IndexMap::FACTOR,
+  indexRenderBuffer(RES_WIDTH * IndexMap::FACTOR, RES_HEIGHT * IndexMap::FACTOR),
+  indexTexture(RES_WIDTH * IndexMap::FACTOR,
+               RES_HEIGHT * IndexMap::FACTOR,
                GL_LUMINANCE32UI_EXT,
                GL_LUMINANCE_INTEGER_EXT,
                GL_UNSIGNED_INT),
-  vertConfTexture(Resolution::getInstance().width() * IndexMap::FACTOR,
-                  Resolution::getInstance().height() * IndexMap::FACTOR,
+  vertConfTexture(RES_WIDTH * IndexMap::FACTOR,
+                  RES_HEIGHT * IndexMap::FACTOR,
                   GL_RGBA32F, GL_LUMINANCE, GL_FLOAT),
-  colorTimeTexture(Resolution::getInstance().width() * IndexMap::FACTOR,
-                   Resolution::getInstance().height() * IndexMap::FACTOR,
+  colorTimeTexture(RES_WIDTH * IndexMap::FACTOR,
+                   RES_HEIGHT * IndexMap::FACTOR,
                    GL_RGBA32F, GL_LUMINANCE, GL_FLOAT),
-  normalRadTexture(Resolution::getInstance().width() * IndexMap::FACTOR,
-                   Resolution::getInstance().height() * IndexMap::FACTOR,
+  normalRadTexture(RES_WIDTH * IndexMap::FACTOR,
+                   RES_HEIGHT * IndexMap::FACTOR,
                    GL_RGBA32F, GL_LUMINANCE, GL_FLOAT),
   drawDepthProgram(loadProgramFromFile("empty.vert", "visualise_textures.frag", "quad.geom")),
-  drawRenderBuffer(Resolution::getInstance().width(), Resolution::getInstance().height()),
-  drawTexture(Resolution::getInstance().width(),
-              Resolution::getInstance().height(),
+  drawRenderBuffer(RES_WIDTH, RES_HEIGHT),
+  drawTexture(RES_WIDTH,
+              RES_HEIGHT,
               GL_RGBA,
               GL_RGB,
               GL_UNSIGNED_BYTE,
               false),
   depthProgram(loadProgramFromFile("splat.vert", "depth_splat.frag")),
-  depthRenderBuffer(Resolution::getInstance().width(), Resolution::getInstance().height()),
-  depthTexture(Resolution::getInstance().width(),
-               Resolution::getInstance().height(),
+  depthRenderBuffer(RES_WIDTH, RES_HEIGHT),
+  depthTexture(RES_WIDTH,
+               RES_HEIGHT,
                GL_LUMINANCE32F_ARB,
                GL_LUMINANCE,
                GL_FLOAT,
                false,
                true),
   combinedProgram(loadProgramFromFile("splat.vert", "combo_splat.frag")),
-  combinedRenderBuffer(Resolution::getInstance().width(), Resolution::getInstance().height()),
-  imageTexture(Resolution::getInstance().width(),
-               Resolution::getInstance().height(),
+  combinedRenderBuffer(RES_WIDTH, RES_HEIGHT),
+  imageTexture(RES_WIDTH,
+               RES_HEIGHT,
                GL_RGBA,
                GL_RGB,
                GL_UNSIGNED_BYTE,
                false,
                true),
-  vertexTexture(Resolution::getInstance().width(),
-                Resolution::getInstance().height(),
+  vertexTexture(RES_WIDTH,
+                RES_HEIGHT,
                 GL_RGBA32F, GL_LUMINANCE, GL_FLOAT, false, true),
-  normalTexture(Resolution::getInstance().width(),
-                Resolution::getInstance().height(),
+  normalTexture(RES_WIDTH,
+                RES_HEIGHT,
                 GL_RGBA32F, GL_LUMINANCE, GL_FLOAT, false, true),
-  timeTexture(Resolution::getInstance().width(),
-              Resolution::getInstance().height(),
+  timeTexture(RES_WIDTH,
+              RES_HEIGHT,
               GL_LUMINANCE16UI_EXT,
               GL_LUMINANCE_INTEGER_EXT,
               GL_UNSIGNED_SHORT,
               false,
               true),
-  oldRenderBuffer(Resolution::getInstance().width(), Resolution::getInstance().height()),
-  oldImageTexture(Resolution::getInstance().width(),
-                  Resolution::getInstance().height(),
+  oldRenderBuffer(RES_WIDTH, RES_HEIGHT),
+  oldImageTexture(RES_WIDTH,
+                  RES_HEIGHT,
                   GL_RGBA,
                   GL_RGB,
                   GL_UNSIGNED_BYTE,
                   false,
                   true),
-  oldVertexTexture(Resolution::getInstance().width(),
-                   Resolution::getInstance().height(),
+  oldVertexTexture(RES_WIDTH,
+                   RES_HEIGHT,
                    GL_RGBA32F, GL_LUMINANCE, GL_FLOAT, false, true),
-  oldNormalTexture(Resolution::getInstance().width(),
-                   Resolution::getInstance().height(),
+  oldNormalTexture(RES_WIDTH,
+                   RES_HEIGHT,
                    GL_RGBA32F, GL_LUMINANCE, GL_FLOAT, false, true),
-  oldTimeTexture(Resolution::getInstance().width(),
-                 Resolution::getInstance().height(),
+  oldTimeTexture(RES_WIDTH,
+                 RES_HEIGHT,
                  GL_LUMINANCE16UI_EXT,
                  GL_LUMINANCE_INTEGER_EXT,
                  GL_UNSIGNED_SHORT,
                  false,
                  true),
-  infoRenderBuffer(Resolution::getInstance().width(), Resolution::getInstance().height()),
-  colorInfoTexture(Resolution::getInstance().width() * IndexMap::FACTOR,
-                   Resolution::getInstance().height() * IndexMap::FACTOR,
+  infoRenderBuffer(RES_WIDTH, RES_HEIGHT),
+  colorInfoTexture(RES_WIDTH * IndexMap::FACTOR,
+                   RES_HEIGHT * IndexMap::FACTOR,
                    GL_RGBA32F, GL_LUMINANCE, GL_FLOAT),
-  vertexInfoTexture(Resolution::getInstance().width() * IndexMap::FACTOR,
-                   Resolution::getInstance().height() * IndexMap::FACTOR,
+  vertexInfoTexture(RES_WIDTH * IndexMap::FACTOR,
+                   RES_HEIGHT * IndexMap::FACTOR,
                    GL_RGBA32F, GL_LUMINANCE, GL_FLOAT),
-  normalInfoTexture(Resolution::getInstance().width() * IndexMap::FACTOR,
-                    Resolution::getInstance().height() * IndexMap::FACTOR,
+  normalInfoTexture(RES_WIDTH * IndexMap::FACTOR,
+                    RES_HEIGHT * IndexMap::FACTOR,
                     GL_RGBA32F, GL_LUMINANCE, GL_FLOAT)
 
 {
@@ -171,8 +171,8 @@ void IndexMap::predictIndices(const Eigen::Matrix4f & pose,
     indexProgram->setUniform(Uniform("t_inv", t_inv));
     indexProgram->setUniform(Uniform("cam", cam));
     indexProgram->setUniform(Uniform("maxDepth", depthCutoff));
-    indexProgram->setUniform(Uniform("cols", (float)Resolution::getInstance().cols() * IndexMap::FACTOR));
-    indexProgram->setUniform(Uniform("rows", (float)Resolution::getInstance().rows() * IndexMap::FACTOR));
+    indexProgram->setUniform(Uniform("cols", (float)RES_WIDTH * IndexMap::FACTOR));
+    indexProgram->setUniform(Uniform("rows", (float)RES_HEIGHT * IndexMap::FACTOR));
     indexProgram->setUniform(Uniform("time", time));
     indexProgram->setUniform(Uniform("timeDelta", timeDelta));
 
@@ -294,8 +294,8 @@ void IndexMap::combinedPredict(const Eigen::Matrix4f & pose,
     combinedProgram->setUniform(Uniform("cam", cam));
     combinedProgram->setUniform(Uniform("maxDepth", depthCutoff));
     combinedProgram->setUniform(Uniform("confThreshold", confThreshold));
-    combinedProgram->setUniform(Uniform("cols", (float)Resolution::getInstance().cols()));
-    combinedProgram->setUniform(Uniform("rows", (float)Resolution::getInstance().rows()));
+    combinedProgram->setUniform(Uniform("cols", (float)RES_WIDTH));
+    combinedProgram->setUniform(Uniform("rows", (float)RES_HEIGHT));
     combinedProgram->setUniform(Uniform("time", time));
     combinedProgram->setUniform(Uniform("maxTime", maxTime));
     combinedProgram->setUniform(Uniform("timeDelta", timeDelta));
@@ -375,8 +375,8 @@ void IndexMap::synthesizeDepth(const Eigen::Matrix4f & pose,
     depthProgram->setUniform(Uniform("cam", cam));
     depthProgram->setUniform(Uniform("maxDepth", depthCutoff));
     depthProgram->setUniform(Uniform("confThreshold", confThreshold));
-    depthProgram->setUniform(Uniform("cols", (float)Resolution::getInstance().cols()));
-    depthProgram->setUniform(Uniform("rows", (float)Resolution::getInstance().rows()));
+    depthProgram->setUniform(Uniform("cols", (float)RES_WIDTH));
+    depthProgram->setUniform(Uniform("rows", (float)RES_HEIGHT));
     depthProgram->setUniform(Uniform("time", time));
     depthProgram->setUniform(Uniform("maxTime", maxTime));
     depthProgram->setUniform(Uniform("timeDelta", timeDelta));
@@ -442,8 +442,8 @@ void IndexMap::synthesizeInfo(const Eigen::Matrix4f & pose,
     combinedProgram->setUniform(Uniform("cam", cam));
     combinedProgram->setUniform(Uniform("maxDepth", depthCutoff));
     combinedProgram->setUniform(Uniform("confThreshold", confThreshold));
-    combinedProgram->setUniform(Uniform("cols", (float)Resolution::getInstance().cols()));
-    combinedProgram->setUniform(Uniform("rows", (float)Resolution::getInstance().rows()));
+    combinedProgram->setUniform(Uniform("cols", (float)RES_WIDTH));
+    combinedProgram->setUniform(Uniform("rows", (float)RES_HEIGHT));
     combinedProgram->setUniform(Uniform("time", 0));
     combinedProgram->setUniform(Uniform("maxTime", std::numeric_limits<int>::max()));
     combinedProgram->setUniform(Uniform("timeDelta", std::numeric_limits<int>::max()));

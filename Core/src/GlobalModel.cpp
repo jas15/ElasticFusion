@@ -60,26 +60,26 @@ GlobalModel::GlobalModel()
 
   delete [] vertices;
 
-  vertices = new float[Resolution::getInstance().numPixels() * Vertex::SIZE];
+  vertices = new float[RES_PIXELS * Vertex::SIZE];
 
-  memset(&vertices[0], 0, Resolution::getInstance().numPixels() * Vertex::SIZE);
+  memset(&vertices[0], 0, RES_PIXELS * Vertex::SIZE);
 
   glGenTransformFeedbacks(1, &newUnstableFid);
   glGenBuffers(1, &newUnstableVbo);
   glBindBuffer(GL_ARRAY_BUFFER, newUnstableVbo);
-  glBufferData(GL_ARRAY_BUFFER, Resolution::getInstance().numPixels() * Vertex::SIZE, &vertices[0], GL_STREAM_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, RES_PIXELS * Vertex::SIZE, &vertices[0], GL_STREAM_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   delete [] vertices;
 
   std::vector<Eigen::Vector2f> uv;
 
-  for(int i = 0; i < Resolution::getInstance().width(); i++)
+  for(int i = 0; i < RES_WIDTH; i++)
   {
-    for(int j = 0; j < Resolution::getInstance().height(); j++)
+    for(int j = 0; j < RES_HEIGHT; j++)
     {
-      uv.push_back(Eigen::Vector2f(((float)i / (float)Resolution::getInstance().width()) + 1.0 / (2 * (float)Resolution::getInstance().width()),
-                   ((float)j / (float)Resolution::getInstance().height()) + 1.0 / (2 * (float)Resolution::getInstance().height())));
+      uv.push_back(Eigen::Vector2f(((float)i / (float)RES_WIDTH) + 1.0 / (2 * (float)RES_WIDTH),
+                   ((float)j / (float)RES_HEIGHT) + 1.0 / (2 * (float)RES_HEIGHT)));
     }
   }
 
@@ -347,8 +347,8 @@ void GlobalModel::fuseData(const Eigen::Matrix4f & pose,
       Intrinsics::getInstance().cy(),
       1.0 / Intrinsics::getInstance().fx(),
       1.0 / Intrinsics::getInstance().fy())));
-  dataProgram->setUniform(Uniform("cols", (float)Resolution::getInstance().cols()));
-  dataProgram->setUniform(Uniform("rows", (float)Resolution::getInstance().rows()));
+  dataProgram->setUniform(Uniform("cols", (float)RES_WIDTH));
+  dataProgram->setUniform(Uniform("rows", (float)RES_HEIGHT));
   dataProgram->setUniform(Uniform("scale", (float)IndexMap::FACTOR));
   dataProgram->setUniform(Uniform("texDim", (float)TEXTURE_DIMENSION));
   dataProgram->setUniform(Uniform("pose", pose));
@@ -545,8 +545,8 @@ void GlobalModel::clean(const Eigen::Matrix4f & pose,
                              Intrinsics::getInstance().cy(),
                              Intrinsics::getInstance().fx(),
                              Intrinsics::getInstance().fy())));
-  unstableProgram->setUniform(Uniform("cols", (float)Resolution::getInstance().cols()));
-  unstableProgram->setUniform(Uniform("rows", (float)Resolution::getInstance().rows()));
+  unstableProgram->setUniform(Uniform("cols", (float)RES_WIDTH));
+  unstableProgram->setUniform(Uniform("rows", (float)RES_HEIGHT));
 
   glBindBuffer(GL_ARRAY_BUFFER, vbos[target].first);
 

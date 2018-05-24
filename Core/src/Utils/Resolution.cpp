@@ -5,6 +5,7 @@
 */
 
 #include "Resolution.h"
+#include <iostream>
 
 const Resolution & Resolution::getInstance(int width,int height)
 {

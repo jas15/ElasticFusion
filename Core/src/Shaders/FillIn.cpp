@@ -19,33 +19,33 @@
 #include "FillIn.h"
 
 FillIn::FillIn()
- : imageTexture(Resolution::getInstance().width(),
-                Resolution::getInstance().height(),
+ : imageTexture(RES_WIDTH,
+                RES_HEIGHT,
                 GL_RGBA,
                 GL_RGB,
                 GL_UNSIGNED_BYTE,
                 false,
                 true),
-   vertexTexture(Resolution::getInstance().width(),
-                 Resolution::getInstance().height(),
+   vertexTexture(RES_WIDTH,
+                 RES_HEIGHT,
                  GL_RGBA32F,
                  GL_LUMINANCE,
                  GL_FLOAT,
                  false,
                  true),
-   normalTexture(Resolution::getInstance().width(),
-                 Resolution::getInstance().height(),
+   normalTexture(RES_WIDTH,
+                 RES_HEIGHT,
                  GL_RGBA32F,
                  GL_LUMINANCE,
                  GL_FLOAT,
                  false,
                  true),
    imageProgram(loadProgramFromFile("empty.vert", "fill_rgb.frag", "quad.geom")),
-   imageRenderBuffer(Resolution::getInstance().width(), Resolution::getInstance().height()),
+   imageRenderBuffer(RES_WIDTH, RES_HEIGHT),
    vertexProgram(loadProgramFromFile("empty.vert", "fill_vertex.frag", "quad.geom")),
-   vertexRenderBuffer(Resolution::getInstance().width(), Resolution::getInstance().height()),
+   vertexRenderBuffer(RES_WIDTH, RES_HEIGHT),
    normalProgram(loadProgramFromFile("empty.vert", "fill_normal.frag", "quad.geom")),
-   normalRenderBuffer(Resolution::getInstance().width(), Resolution::getInstance().height())
+   normalRenderBuffer(RES_WIDTH, RES_HEIGHT)
 {
     imageFrameBuffer.AttachColour(*imageTexture.texture);
     imageFrameBuffer.AttachDepth(imageRenderBuffer);
@@ -123,8 +123,8 @@ void FillIn::vertex(GPUTexture * existingVertex, GPUTexture * rawDepth, bool pas
                   1.0f / Intrinsics::getInstance().fy());
 
     vertexProgram->setUniform(Uniform("cam", cam));
-    vertexProgram->setUniform(Uniform("cols", (float)Resolution::getInstance().cols()));
-    vertexProgram->setUniform(Uniform("rows", (float)Resolution::getInstance().rows()));
+    vertexProgram->setUniform(Uniform("cols", (float)RES_WIDTH));
+    vertexProgram->setUniform(Uniform("rows", (float)RES_HEIGHT));
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, existingVertex->texture->tid);
@@ -170,8 +170,8 @@ void FillIn::normal(GPUTexture * existingNormal, GPUTexture * rawDepth, bool pas
                   1.0f / Intrinsics::getInstance().fy());
 
     normalProgram->setUniform(Uniform("cam", cam));
-    normalProgram->setUniform(Uniform("cols", (float)Resolution::getInstance().cols()));
-    normalProgram->setUniform(Uniform("rows", (float)Resolution::getInstance().rows()));
+    normalProgram->setUniform(Uniform("cols", (float)RES_WIDTH));
+    normalProgram->setUniform(Uniform("rows", (float)RES_HEIGHT));
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, existingNormal->texture->tid);

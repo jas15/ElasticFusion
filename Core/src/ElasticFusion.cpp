@@ -37,14 +37,14 @@ ElasticFusion::ElasticFusion(const int timeDelta,
                              const bool so3,
                              const bool frameToFrameRGB,
                              const std::string fileName)
- : frameToModel(Resolution::getInstance().width(),
-                Resolution::getInstance().height(),
+ : frameToModel(RES_WIDTH,
+                RES_HEIGHT,
                 Intrinsics::getInstance().cx(),
                 Intrinsics::getInstance().cy(),
                 Intrinsics::getInstance().fx(),
                 Intrinsics::getInstance().fy()),
-   modelToModel(Resolution::getInstance().width(),
-                Resolution::getInstance().height(),
+   modelToModel(RES_WIDTH,
+                RES_HEIGHT,
                 Intrinsics::getInstance().cx(),
                 Intrinsics::getInstance().cy(),
                 Intrinsics::getInstance().fx(),
@@ -63,13 +63,13 @@ ElasticFusion::ElasticFusion(const int timeDelta,
    deforms(0),
    fernDeforms(0),
    consSample(20),
-   resize(Resolution::getInstance().width(),
-          Resolution::getInstance().height(),
-          Resolution::getInstance().width() / consSample,
-          Resolution::getInstance().height() / consSample),
-   imageBuff(Resolution::getInstance().rows() / consSample, Resolution::getInstance().cols() / consSample),
-   consBuff(Resolution::getInstance().rows() / consSample, Resolution::getInstance().cols() / consSample),
-   timesBuff(Resolution::getInstance().rows() / consSample, Resolution::getInstance().cols() / consSample),
+   resize(RES_WIDTH,
+          RES_HEIGHT,
+          RES_WIDTH / consSample,
+          RES_HEIGHT / consSample),
+   imageBuff(RES_HEIGHT / consSample, RES_WIDTH / consSample),
+   consBuff(RES_HEIGHT / consSample, RES_WIDTH / consSample),
+   timesBuff(RES_HEIGHT / consSample, RES_WIDTH / consSample),
    closeLoops(closeLoops),
    iclnuim(iclnuim),
    reloc(reloc),
@@ -174,8 +174,8 @@ void ElasticFusion::createTextures()
 {
   //NOTE createTextures takes 2.245ms. only called in init
   //easier to read. why do ppl copy the same 40 characters in 6 different places within 40 lines ?! twice !
-  int w = Resolution::getInstance().width();
-  int h = Resolution::getInstance().height();
+  int w = RES_WIDTH;
+  int h = RES_HEIGHT;
 
   textures[GPUTexture::RGB]                   = new GPUTexture(w,
                                                                h,
@@ -842,8 +842,8 @@ void ElasticFusion::filterDepth()
   std::vector<Uniform> uniforms;
 
   //NOTE again push_back dead af can't this be done a different way ?
-  uniforms.push_back(Uniform("cols", (float)Resolution::getInstance().cols()));
-  uniforms.push_back(Uniform("rows", (float)Resolution::getInstance().rows()));
+  uniforms.push_back(Uniform("cols", (float)RES_WIDTH));
+  uniforms.push_back(Uniform("rows", (float)RES_HEIGHT));
   uniforms.push_back(Uniform("maxD", depthCutoff));
 
   //NOTE this is 6ms ?!?!?!? why so diff. just bc there are 3 to do ? or wha. Might be the FILTER
