@@ -5,4 +5,46 @@
 ./../Stopwatch/build/StopwatchViewer &
 
 #Run ElasticFusion with fast odometry, quitting at the end of a log file, ending the log at 250 frames
-./GUI/build/ElasticFusion -fo -q -e 50 -l ../log_files/dyson_lab.klg
+./GUI/build/ElasticFusion -fo -q -e 250 -l ../log_files/dyson_lab.klg
+
+###./GUI/build/ElasticFusion -cal FX FY CX CY -q -l ../log_files/dyson_lab.klg NOTE for calibration !
+###./GUI/build/ElasticFusion -q -nso -l ../log_files/dyson_lab.klg             NOTE disable SO(3) pre-alignment in tracking
+###./GUI/build/ElasticFusion -q -fo -l ../log_files/dyson_lab.klg              NOTE fast odometry (single level pyramid)
+###./GUI/build/ElasticFusion -q -o -l ../log_files/dyson_lab.klg               NOTE open loop mode
+
+## All of the possible combinations of flags to use. Give an accuracy / speed tradeoff !
+
+#./GUI/build/ElasticFusion             -q -l ../log_files/dyson_lab.klg
+#./GUI/build/ElasticFusion        -nso -q -l ../log_files/dyson_lab.klg
+#./GUI/build/ElasticFusion    -fo      -q -l ../log_files/dyson_lab.klg
+#./GUI/build/ElasticFusion    -fo -nso -q -l ../log_files/dyson_lab.klg
+#./GUI/build/ElasticFusion -o          -q -l ../log_files/dyson_lab.klg
+#./GUI/build/ElasticFusion -o     -nso -q -l ../log_files/dyson_lab.klg
+#./GUI/build/ElasticFusion -o -fo      -q -l ../log_files/dyson_lab.klg
+#./GUI/build/ElasticFusion -o -fo -nso -q -l ../log_files/dyson_lab.klg
+
+#"or disable the tracking pyramid" IN MAINCONTROLLER.CPP towards the bottom of the big commented out bit (pass in false)
+#./GUI/build/ElasticFusion             -q -l ../log_files/dyson_lab.klg #DISABLE PYRAMID
+#./GUI/build/ElasticFusion        -nso -q -l ../log_files/dyson_lab.klg #DISABLE PYRAMID
+#./GUI/build/ElasticFusion    -fo      -q -l ../log_files/dyson_lab.klg #DISABLE PYRAMID
+#./GUI/build/ElasticFusion    -fo -nso -q -l ../log_files/dyson_lab.klg #DISABLE PYRAMID
+#./GUI/build/ElasticFusion -o          -q -l ../log_files/dyson_lab.klg #DISABLE PYRAMID
+#./GUI/build/ElasticFusion -o     -nso -q -l ../log_files/dyson_lab.klg #DISABLE PYRAMID
+#./GUI/build/ElasticFusion -o -fo      -q -l ../log_files/dyson_lab.klg #DISABLE PYRAMID
+#./GUI/build/ElasticFusion -o -fo -nso -q -l ../log_files/dyson_lab.klg #DISABLE PYRAMID
+
+
+## Other things that we could look to change
+#-c  <><> Surfel confidence threshold (default *10*).
+#-d  <><> Cutoff distance for depth processing (default *3*m).
+#-ie <><> Local loop closure residual threshold (default *5e-05*).
+#-ic <><> Local loop closure inlier threshold (default *35000*).
+#-cv <><> Local loop closure covariance threshold (default *1e-05*).
+#-pt <><> Global loop closure photometric threshold (default *115*).
+#-ft <><> Fern encoding threshold (default *0.3095*).
+
+## More flags that could be important... What about -sc?
+#-icl : Enable this if using the [ICL-NUIM](http://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html) dataset (flips normals to account for negative focal length on that data).
+#-rl  : Enable relocalisation.
+#-ftf : Do frame-to-frame RGB tracking. 
+#-sc  : Showcase mode (minimal GUI).
