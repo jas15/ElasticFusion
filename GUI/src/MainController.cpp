@@ -535,15 +535,6 @@ void MainController::run()
 
     gui->postCall();
 
-    logReader->flipColors = gui->flipColors->Get();
-    eFusion->setRgbOnly(gui->rgbOnly->Get());
-    eFusion->setPyramid(gui->pyramid->Get());
-    eFusion->setFastOdom(gui->fastOdom->Get());
-    eFusion->setConfidenceThreshold(gui->confidenceThreshold->Get());
-    eFusion->setDepthCutoff(gui->depthCutoff->Get());
-    eFusion->setIcpWeight(gui->icpWeight->Get());
-    eFusion->setSo3(gui->so3->Get());
-    eFusion->setFrameToFrameRGB(gui->frameToFrameRGB->Get());
 
     resetButton = pangolin::Pushed(*gui->reset);
 
@@ -558,6 +549,16 @@ void MainController::run()
       }
     }
     */
+
+    logReader->flipColors = gui->flipColors->Get();
+    eFusion->setRgbOnly(gui->rgbOnly->Get());
+    eFusion->setPyramid(gui->pyramid->Get()); //TODO change to false to remove pyramid
+    eFusion->setFastOdom(gui->fastOdom->Get());
+    eFusion->setConfidenceThreshold(gui->confidenceThreshold->Get());
+    eFusion->setDepthCutoff(gui->depthCutoff->Get());
+    eFusion->setIcpWeight(gui->icpWeight->Get());
+    eFusion->setSo3(gui->so3->Get());
+    eFusion->setFrameToFrameRGB(gui->frameToFrameRGB->Get());
 
     //NOTE still need this to push the timings
     Stopwatch::getInstance().sendAll();
