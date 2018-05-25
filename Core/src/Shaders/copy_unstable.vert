@@ -16,7 +16,7 @@
  *
  */
 
-#version 330 core
+#version 450 core
 
 layout (location = 0) in vec4 vPos;
 layout (location = 1) in vec4 vCol;
@@ -26,6 +26,7 @@ out vec4 vPosition;
 out vec4 vColor;
 out vec4 vNormRad;
 flat out int test;
+flat out int vertexId;
 
 uniform int time;
 uniform float scale;
@@ -53,6 +54,7 @@ void main()
     vNormRad = vNormR;
     
     test = 1;
+    vertexId = gl_VertexID;
 
     vec3 localPos = (t_inv * vec4(vPosition.xyz, 1.0f)).xyz;
     

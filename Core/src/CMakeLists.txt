@@ -1,4 +1,8 @@
-cmake_minimum_required(VERSION 2.6.0)
+cmake_minimum_required(VERSION 3.0.2)
+
+if(POLICY CMP0007) #NEW
+  cmake_policy(SET CMP0007 NEW)
+endif()
 
 project(libefusion)
 
@@ -8,12 +12,16 @@ find_package(Pangolin 0.1 REQUIRED)
 find_package(CUDA REQUIRED)
 find_package(SuiteSparse REQUIRED)
 
+set(CUDA_HOST_COMPILER gcc-5) #NEW
+
 set(efusion_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Shaders" CACHE PATH "Where the shaders live")
 
-include_directories(${Pangolin_INCLUDE_DIRS})
-include_directories(${CUDA_INCLUDE_DIRS})
-include_directories(${EIGEN_INCLUDE_DIRS})
-include_directories(${SUITESPARSE_INCLUDE_DIRS})
+#include_directories(${Pangolin_INCLUDE_DIRS}) #OLD
+#include_directories(${CUDA_INCLUDE_DIRS})
+#include_directories(${EIGEN_INCLUDE_DIRS})
+#include_directories(${SUITESPARSE_INCLUDE_DIRS})
+
+message(${efusion_SHADER_DIR}) #NEW
 
 file(GLOB srcs *.cpp)
 file(GLOB utils_srcs Utils/*.cpp)
@@ -84,7 +92,15 @@ add_library(efusion SHARED
             ${containers_hdrs}
 )
 
-target_link_libraries(efusion
+target_include_directories(efusion PUBLIC
+                           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+                           ${Pangolin_INCLUDE_DIRS}
+                           ${CUDA_INCLUDE_DIRS}
+                           ${EIGEN_INCLUDE_DIRS}
+                           ${SUITESPARSE_INCLUDE_DIRS}
+)
+
+target_link_libraries(efusion PUBLIC
                       ${Eigen_LIBRARIES}
                       ${Pangolin_LIBRARIES}
                       ${CUDA_LIBRARIES}

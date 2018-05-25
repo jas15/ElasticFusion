@@ -395,6 +395,7 @@ void MainController::run()
                                gui->drawPoints->Get(),
                                gui->drawWindow->Get(),
                                gui->drawTimes->Get(),
+                               gui->drawClasses->Get(),
                                eFusion->getTick(),
                                eFusion->getTimeDelta());
       }

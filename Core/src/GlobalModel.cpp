@@ -17,6 +17,7 @@
  */
 
 #include "GlobalModel.h"
+#include <GL/glext.h>
 
 const int GlobalModel::TEXTURE_DIMENSION = 3072;
 const int GlobalModel::MAX_VERTICES = GlobalModel::TEXTURE_DIMENSION * GlobalModel::TEXTURE_DIMENSION;
@@ -28,6 +29,7 @@ GlobalModel::GlobalModel()
    renderSource(1),
    bufferSize(MAX_VERTICES * Vertex::SIZE),
    count(0),
+   deleted_count(0),
    initProgram(loadProgramFromFile("init_unstable.vert")),
    drawProgram(loadProgramFromFile("draw_feedback.vert", "draw_feedback.frag")),
    drawSurfelProgram(loadProgramFromFile("draw_global_surface.vert", "draw_global_surface.frag", "draw_global_surface.geom")),
@@ -52,6 +54,14 @@ GlobalModel::GlobalModel()
   glBufferData(GL_ARRAY_BUFFER, bufferSize, &vertices[0], GL_STREAM_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+
+  // This allows recolouring of the map surfels
+  size_t num_bytes;
+  cudaGraphicsGLRegisterBuffer(&mapCudaRes, vbos[0].first, cudaGraphicsRegisterFlagsNone);
+  cudaGraphicsMapResources(1, &mapCudaRes, 0);
+  cudaGraphicsResourceGetMappedPointer((void**)&cuda_map_ptr, &num_bytes, mapCudaRes);
+  cudaGraphicsUnmapResources(1, &mapCudaRes, 0);
+
   glGenTransformFeedbacks(1, &vbos[1].second);
   glGenBuffers(1, &vbos[1].first);
   glBindBuffer(GL_ARRAY_BUFFER, vbos[1].first);
@@ -59,6 +69,19 @@ GlobalModel::GlobalModel()
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   delete [] vertices;
+
+  // This is to allow us to keep track of deleted surfels
+  int * indices = new int[MAX_VERTICES];
+  glGenTransformFeedbacks(1, &deleted_surfel_buffer.second);
+  glGenBuffers(1, &deleted_surfel_buffer.first);
+  glBindBuffer(GL_ARRAY_BUFFER, deleted_surfel_buffer.first);
+  glBufferData(GL_ARRAY_BUFFER, MAX_VERTICES * sizeof(int), &indices[0], GL_STREAM_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  cudaGraphicsGLRegisterBuffer(&deletedSurfelCudaRes, deleted_surfel_buffer.first, cudaGraphicsRegisterFlagsNone);
+  cudaGraphicsMapResources(1, &deletedSurfelCudaRes, 0);
+  cudaGraphicsResourceGetMappedPointer((void**)&cuda_deleted_surfel_ptr, &num_bytes, deletedSurfelCudaRes);
+  cudaGraphicsUnmapResources(1, &deletedSurfelCudaRes, 0);
+  delete [] indices;
 
   vertices = new float[RES_PIXELS * Vertex::SIZE];
 
@@ -95,59 +118,41 @@ GlobalModel::GlobalModel()
   frameBuffer.AttachColour(*updateMapNormsRadii.texture);
   frameBuffer.AttachDepth(renderBuffer);
 
-  updateProgram->Bind();
+//----------------------------
 
-  int locUpdate[3] =
+  // Setup transform feedbacks
+  static const char* varying_names3[3] =
   {
-    glGetVaryingLocationNV(updateProgram->programId(), "vPosition0"),
-    glGetVaryingLocationNV(updateProgram->programId(), "vColor0"),
-    glGetVaryingLocationNV(updateProgram->programId(), "vNormRad0"),
+    "vPosition0",
+    "vColor0",
+    "vNormRad0",
+  };
+  glTransformFeedbackVaryings(updateProgram->programId(), 3, varying_names3, GL_INTERLEAVED_ATTRIBS);
+  updateProgram->Link();
+  glTransformFeedbackVaryings(dataProgram->programId(), 3, varying_names3, GL_INTERLEAVED_ATTRIBS);
+  dataProgram->Link();
+  glTransformFeedbackVaryings(initProgram->programId(), 3, varying_names3, GL_INTERLEAVED_ATTRIBS);
+  initProgram->Link();
+  
+  // Setup dual buffer for vertex id out
+  static const char* varying_names5[5] =
+  {
+    "vPosition0",
+    "vColor0",
+    "vNormRad0",
+    "gl_NextBuffer",
+    "deleted_id",
   };
 
-  glTransformFeedbackVaryingsNV(updateProgram->programId(), 3, locUpdate, GL_INTERLEAVED_ATTRIBS);
 
-  updateProgram->Unbind();
-
-  dataProgram->Bind();
-
-  int dataUpdate[3] =
-  {
-    glGetVaryingLocationNV(dataProgram->programId(), "vPosition0"),
-    glGetVaryingLocationNV(dataProgram->programId(), "vColor0"),
-    glGetVaryingLocationNV(dataProgram->programId(), "vNormRad0"),
-  };
-
-  glTransformFeedbackVaryingsNV(dataProgram->programId(), 3, dataUpdate, GL_INTERLEAVED_ATTRIBS);
-
-  dataProgram->Unbind();
-
-  unstableProgram->Bind();
-
-  int unstableUpdate[3] =
-  {
-    glGetVaryingLocationNV(unstableProgram->programId(), "vPosition0"),
-    glGetVaryingLocationNV(unstableProgram->programId(), "vColor0"),
-    glGetVaryingLocationNV(unstableProgram->programId(), "vNormRad0"),
-  };
-
-  glTransformFeedbackVaryingsNV(unstableProgram->programId(), 3, unstableUpdate, GL_INTERLEAVED_ATTRIBS);
-
-  unstableProgram->Unbind();
-
-  initProgram->Bind();
-
-  int locInit[3] =
-  {
-    glGetVaryingLocationNV(initProgram->programId(), "vPosition0"),
-    glGetVaryingLocationNV(initProgram->programId(), "vColor0"),
-    glGetVaryingLocationNV(initProgram->programId(), "vNormRad0"),
-  };
-
-  glTransformFeedbackVaryingsNV(initProgram->programId(), 3, locInit, GL_INTERLEAVED_ATTRIBS);
+  glTransformFeedbackVaryings(unstableProgram->programId(),5,varying_names5,GL_INTERLEAVED_ATTRIBS);
+  unstableProgram->Link();
 
   glGenQueries(1, &countQuery);
+  glGenQueries(1, &deleteQuery);
 
   //Empty both transform feedbacks
+  initProgram->Bind();
   glEnable(GL_RASTERIZER_DISCARD);
 
   glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, vbos[0].second);
@@ -172,6 +177,21 @@ GlobalModel::GlobalModel()
 
   glEndTransformFeedback();
 
+
+  // Also clear out the deleted surfel buffer
+  glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, 0);
+
+  glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, deleted_surfel_buffer.second);
+
+  glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, deleted_surfel_buffer.first);
+
+  glBeginTransformFeedback(GL_POINTS);
+
+  glDrawArrays(GL_POINTS, 0, 0);
+
+  glEndTransformFeedback();
+  //END Transform feedback
+
   glDisable(GL_RASTERIZER_DISCARD);
 
   glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, 0);
@@ -184,10 +204,14 @@ GlobalModel::~GlobalModel()
   glDeleteBuffers(1, &vbos[0].first);
   glDeleteTransformFeedbacks(1, &vbos[0].second);
 
+  glDeleteBuffers(1, &deleted_surfel_buffer.first);
+  glDeleteTransformFeedbacks(1, &deleted_surfel_buffer.second);
+
   glDeleteBuffers(1, &vbos[1].first);
   glDeleteTransformFeedbacks(1, &vbos[1].second);
 
   glDeleteQueries(1, &countQuery);
+  glDeleteQueries(1, &deleteQuery);
 
   glDeleteBuffers(1, &uvo);
 
@@ -195,6 +219,9 @@ GlobalModel::~GlobalModel()
   glDeleteBuffers(1, &newUnstableVbo);
 
   delete [] vbos;
+
+  cudaGraphicsUnregisterResource(mapCudaRes);
+  cudaGraphicsUnregisterResource(deletedSurfelCudaRes);
 }
 
 void GlobalModel::initialise(const FeedbackBuffer & rawFeedback,
@@ -255,6 +282,7 @@ void GlobalModel::renderPointCloud(pangolin::OpenGlMatrix mvp,
                    const bool drawPoints,
                    const bool drawWindow,
                    const bool drawTimes,
+                   const bool drawClasses,
                    const int time,
                    const int timeDelta)
 {
@@ -266,7 +294,7 @@ void GlobalModel::renderPointCloud(pangolin::OpenGlMatrix mvp,
 
   program->setUniform(Uniform("threshold", threshold));
 
-  program->setUniform(Uniform("colorType", (drawNormals ? 1 : drawColors ? 2 : drawTimes ? 3 : 0)));
+  program->setUniform(Uniform("colorType", (drawNormals ? 4 : drawColors ? 2 : drawTimes ? 3 : 0)));
 
   program->setUniform(Uniform("unstable", drawUnstable));
 
@@ -462,6 +490,8 @@ void GlobalModel::fuse(const Eigen::Matrix4f & pose,
 
   glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vbos[renderSource].first);
 
+  glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, deleted_surfel_buffer.first);
+
   glBeginTransformFeedback(GL_POINTS);
 
   glActiveTexture(GL_TEXTURE0);
@@ -564,6 +594,7 @@ void GlobalModel::clean(const Eigen::Matrix4f & pose,
   glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, vbos[renderSource].second);
 
   glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vbos[renderSource].first);
+  glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, deleted_surfel_buffer.first);
 
   glBeginTransformFeedback(GL_POINTS);
 
@@ -589,6 +620,16 @@ void GlobalModel::clean(const Eigen::Matrix4f & pose,
   glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, countQuery);
 
   glDrawTransformFeedback(GL_POINTS, vbos[target].second);
+
+  //This outputs ids of surfels still there
+  glFinish();
+  unstableProgram->setUniform(Uniform("isNew", 0));
+  glBeginQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 1, deleteQuery);
+  glDrawTransformFeedback(GL_POINTS, vbos[target].second);
+  glFinish();
+  glEndQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 1);
+  glGetQueryObjectuiv(deleteQuery, GL_QUERY_RESULT, &deleted_count);
+  unstableProgram->setUniform(Uniform("isNew", 1));
 
   glBindBuffer(GL_ARRAY_BUFFER, newUnstableVbo);
 
@@ -639,6 +680,22 @@ unsigned int GlobalModel::lastCount()
   return count;
 }
 
+
+unsigned int GlobalModel::deletedCount()
+{
+  return deleted_count;
+}
+
+float* GlobalModel::getMapSurfelsGpu()
+{
+  return cuda_map_ptr;
+}
+
+int* GlobalModel::getDeletedSurfelsGpu()
+{
+  return cuda_deleted_surfel_ptr;
+}
+
 Eigen::Vector4f * GlobalModel::downloadMap()
 {
   glFinish();
@@ -667,4 +724,15 @@ Eigen::Vector4f * GlobalModel::downloadMap()
   glFinish();
 
   return vertices;
+}
+
+
+void GlobalModel::updateSurfelClass(const int surfelId, const float color)
+{
+  glFinish();
+  glBindBuffer(GL_ARRAY_BUFFER, vbos[0].first);
+  float val = color;
+  glBufferSubData(GL_ARRAY_BUFFER,surfelId * Vertex::SIZE + sizeof(Eigen::Vector4f) + sizeof(float),sizeof(float),&val);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glFinish();
 }

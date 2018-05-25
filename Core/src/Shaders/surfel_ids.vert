@@ -15,51 +15,46 @@
  * please email researchcontracts.engineering@imperial.ac.uk.
  *
  */
-
 #version 330 core
 
 layout (location = 0) in vec4 position;
 layout (location = 1) in vec4 color;
 layout (location = 2) in vec4 normal;
 
-uniform mat4 MVP;
-uniform float threshold;
-uniform int colorType;
-uniform int unstable;
-uniform int drawWindow;
+uniform mat4 t_inv;
+uniform vec4 cam; //cx, cy, fx, fy
+uniform float cols;
+uniform float rows;
+uniform float maxDepth;
 uniform int time;
 uniform int timeDelta;
+uniform float conf;
 
 out vec4 vColor;
 out vec4 vPosition;
 out vec4 vNormRad;
-out mat4 vMVP;
-out int vTime;
-out int colorType0;
-out int drawWindow0;
-out int timeDelta0;
+out mat4 vT_inv;
+out vec4 vCam;
+out float vCols;
+out float vRows;
+out float vMaxDepth;
 flat out int vertexId;
 
-void main()
-{
-    if (color.y == -1.0)
+void main() {
+    if(position.w > conf)
     {
-      colorType0= -1;
-    }
-    else if(position.w > threshold || unstable == 1)
-    {
-        colorType0 = colorType;
-        drawWindow0 = drawWindow;
-	    vColor = color;
-	    vPosition = position;
-	    vNormRad = normal;
-	    vMVP = MVP;
-	    vTime = time;
-	    timeDelta0 = timeDelta;
-	    gl_Position = MVP * vec4(position.xyz, 1.0);
+        vertexId = gl_VertexID;
+        vColor = color;
+        vPosition = position;
+        vNormRad = normal;
+        vT_inv = t_inv;
+        vCam = cam;
+        vCols = cols;
+        vRows = rows;
+        vMaxDepth = maxDepth;
     }
     else
     {
-        colorType0 = -1;
+        vertexId = -1;
     }
 }

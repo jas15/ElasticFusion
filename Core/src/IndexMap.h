@@ -44,6 +44,13 @@ class IndexMap
 
         EFUSION_API void renderDepth(const float depthCutoff);
 
+        EFUSION_API void renderSurfelIds(const Eigen::Matrix4f & pose,
+                                         const int & time,
+                                         const std::pair<GLuint, GLuint> & model,
+                                         const float threshold,
+                                         const float depthCutoff,
+                                         const int timeDelta);
+
         enum Prediction
         {
             ACTIVE,
@@ -157,6 +164,11 @@ class IndexMap
             return &normalInfoTexture;
         }
 
+        GPUTexture * surfelIdTex()
+        {
+          return &surfelIdTexture;
+        }
+
         static const int FACTOR;
 
     private:
@@ -167,6 +179,11 @@ class IndexMap
         GPUTexture vertConfTexture;
         GPUTexture colorTimeTexture;
         GPUTexture normalRadTexture;
+
+        std::shared_ptr<Shader> surfelIdProgram;
+        pangolin::GlFramebuffer surfelIdFrameBuffer;
+        pangolin::GlRenderBuffer surfelIdRenderBuffer;
+        GPUTexture surfelIdTexture;
 
         std::shared_ptr<Shader> drawDepthProgram;
         pangolin::GlFramebuffer drawFrameBuffer;

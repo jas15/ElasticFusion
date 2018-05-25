@@ -136,6 +136,13 @@ class ElasticFusion
         EFUSION_API void setRgbOnly(const bool & val);
 
         /**
+         * Continue to render the surfel index map, but do not perform any model
+         * updates, ensuring no OpenGL indices change
+         * @param val
+         */
+        EFUSION_API void setTrackingOnly(const bool & val);
+
+        /**
          * Weight for ICP in tracking
          * @param val if 100, only use depth for tracking, if 0, only use RGB. Best value is 10
          */
@@ -323,6 +330,7 @@ class ElasticFusion
         const float maxDepthProcessed;
 
         bool rgbOnly;
+        bool trackingOnly;
         float icpWeight;
         bool pyramid;
         bool fastOdom;

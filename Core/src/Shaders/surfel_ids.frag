@@ -16,41 +16,16 @@
  *
  */
 
-#version 400 core
-#extension GL_ARB_gpu_shader5 : enable
+#version 330 core
 
-layout(points) in;
+flat in int vertexId0;
+in vec2 texcoord;
 
-in vec4 vPosition[];
-in vec4 vColor[];
-in vec4 vNormRad[];
-flat in int test[];
-flat in int vertexId[];
+out int FragColor;
 
-layout(points, max_vertices = 1, stream = 0) out;
-out vec4 vPosition0;
-out vec4 vColor0;
-out vec4 vNormRad0;
-
-layout(points, max_vertices = 1, stream = 1) out;
-flat out int deleted_id;
-
-uniform int isNew;
-
-void main() 
+void main()
 {
-    if(test[0] > 0)
-    {
-      if (!isNew)
-      {
-        deleted_id = vertexId[0];
-        EmitStreamVertex(1);
-      } else
-      {
-        vPosition0 = vPosition[0];
-        vColor0 = vColor[0];
-        vNormRad0 = vNormRad[0];
-        EmitStreamVertex(0);
-      }
-    }
+    if(vertexId0 == -1 || dot(texcoord, texcoord) > 1.0)
+        discard;
+    FragColor = vertexId0;
 }

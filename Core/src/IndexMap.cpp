@@ -37,6 +37,15 @@ IndexMap::IndexMap()
   normalRadTexture(RES_WIDTH * IndexMap::FACTOR,
                    RES_HEIGHT * IndexMap::FACTOR,
                    GL_RGBA32F, GL_LUMINANCE, GL_FLOAT),
+  surfelIdProgram(loadProgramFromFile("surfel_ids.vert","surfel_ids.frag","surfel_ids.geom")),
+  surfelIdRenderBuffer(Resolution::getInstance().width() * IndexMap::FACTOR, Resolution::getInstance().height() * IndexMap::FACTOR),
+  surfelIdTexture(Resolution::getInstance().width() * IndexMap::FACTOR,
+                  Resolution::getInstance().height() * IndexMap::FACTOR,
+                  GL_LUMINANCE32I_EXT,
+                  GL_LUMINANCE_INTEGER_EXT,
+                  GL_INT,
+                  false,
+                  true),
   drawDepthProgram(loadProgramFromFile("empty.vert", "visualise_textures.frag", "quad.geom")),
   drawRenderBuffer(RES_WIDTH, RES_HEIGHT),
   drawTexture(RES_WIDTH,
@@ -137,6 +146,16 @@ IndexMap::IndexMap()
    infoFrameBuffer.AttachColour(*vertexInfoTexture.texture);
    infoFrameBuffer.AttachColour(*normalInfoTexture.texture);
    infoFrameBuffer.AttachDepth(infoRenderBuffer);
+
+   surfelIdFrameBuffer.AttachColour(*surfelIdTexture.texture);
+   surfelIdFrameBuffer.AttachDepth(surfelIdRenderBuffer);
+   // Clear the surfelId frame buffer immediately
+   surfelIdFrameBuffer.Bind();
+   glPushAttrib(GL_VIEWPORT_BIT);
+   glViewport(0, 0, surfelIdRenderBuffer.width, surfelIdRenderBuffer.height);
+   glClearColor(0, 0, 0, 0);
+   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+   surfelIdFrameBuffer.Unbind();
 }
 
 IndexMap::~IndexMap()
@@ -233,6 +252,68 @@ void IndexMap::renderDepth(const float depthCutoff)
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glPopAttrib();
+
+    glFinish();
+}
+void IndexMap::renderSurfelIds(const Eigen::Matrix4f & pose,
+                               const int & time,
+                               const std::pair<GLuint, GLuint> & model,
+                               const float threshold,
+                               const float depthCutoff,
+                               const int timeDelta)
+{
+    surfelIdFrameBuffer.Bind();
+
+    glPushAttrib(GL_VIEWPORT_BIT);
+
+    glViewport(0, 0, surfelIdRenderBuffer.width, surfelIdRenderBuffer.height);
+
+    glClearColor(0, 0, 0, 0);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    surfelIdProgram->Bind();
+
+    Eigen::Matrix4f t_inv = pose.inverse();
+
+    Eigen::Vector4f cam(Intrinsics::getInstance().cx() * IndexMap::FACTOR,
+                  Intrinsics::getInstance().cy() * IndexMap::FACTOR,
+                  Intrinsics::getInstance().fx() * IndexMap::FACTOR,
+                  Intrinsics::getInstance().fy() * IndexMap::FACTOR);
+
+    surfelIdProgram->setUniform(Uniform("t_inv", t_inv));
+    surfelIdProgram->setUniform(Uniform("cam", cam));
+    surfelIdProgram->setUniform(Uniform("maxDepth", depthCutoff));
+    surfelIdProgram->setUniform(Uniform("cols", (float)Resolution::getInstance().cols() * IndexMap::FACTOR));
+    surfelIdProgram->setUniform(Uniform("rows", (float)Resolution::getInstance().rows() * IndexMap::FACTOR));
+    surfelIdProgram->setUniform(Uniform("time", time));
+    surfelIdProgram->setUniform(Uniform("timeDelta", timeDelta));
+    surfelIdProgram->setUniform(Uniform("conf", threshold));
+
+    glBindBuffer(GL_ARRAY_BUFFER, model.first);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, Vertex::SIZE, 0);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, Vertex::SIZE, reinterpret_cast<GLvoid*>(sizeof(Eigen::Vector4f)));
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, Vertex::SIZE, reinterpret_cast<GLvoid*>(sizeof(Eigen::Vector4f) * 2));
+
+    glDrawTransformFeedback(GL_POINTS, model.second);
+
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    surfelIdFrameBuffer.Unbind();
+
+    surfelIdProgram->Unbind();
+
+    glPopAttrib();
+    glPointSize(1);
 
     glFinish();
 }

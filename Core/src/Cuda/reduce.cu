@@ -778,8 +778,9 @@ struct RGBResidual
         DataTerm corres;
 
         corres.valid = false;
+        const int border_size = 16;
 
-        if(i >= 0 && i < rows && j0 >= 0 && j0 < cols)
+        if(i >= 0 + border_size && i < rows - border_size && j0 >= 0 + border_size && j0 < cols - border_size)
         {
             if(j0 < cols - 5 && i < rows - 1)
             {

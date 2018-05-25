@@ -54,6 +54,7 @@ class GlobalModel
                               const bool drawPoints,
                               const bool drawWindow,
                               const bool drawTimes,
+                              const bool drawClasses,
                               const int time,
                               const int timeDelta);
 
@@ -86,6 +87,14 @@ class GlobalModel
                    const bool isFern);
 
         EFUSION_API unsigned int lastCount();
+
+        EFUSION_API unsigned int deletedCount();
+
+        EFUSION_API float* getMapSurfelsGpu();
+
+        EFUSION_API int* getDeletedSurfelsGpu();
+
+        EFUSION_API void updateSurfelClass(const int surfelId, const float color);
 
         Eigen::Vector4f * downloadMap();
 
@@ -126,6 +135,16 @@ class GlobalModel
         pangolin::GlFramebuffer frameBuffer;
         GLuint uvo;
         int uvSize;
+
+        // For SemanticFusion
+        std::pair<GLuint, GLuint> deleted_surfel_buffer;
+        int* cuda_deleted_surfel_ptr;
+        cudaGraphicsResource * deletedSurfelCudaRes;
+        std::vector<int> deleted_surfels;
+        GLuint deleteQuery;
+        unsigned int deleted_count;
+        float* cuda_map_ptr;
+        cudaGraphicsResource * mapCudaRes;
 
         void fuseData(const Eigen::Matrix4f & pose,
             const int & time,
