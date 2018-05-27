@@ -41,7 +41,7 @@ void main()
 {
     if(test[0] > 0)
     {
-      if (!isNew)
+      if (isNew == 0)
       {
         deleted_id = vertexId[0];
         EmitStreamVertex(1);
