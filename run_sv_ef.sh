@@ -5,14 +5,24 @@
 ./../Stopwatch/build/StopwatchViewer &
 
 #Run ElasticFusion with fast odometry, quitting at the end of a log file, ending the log at 250 frames
-./GUI/build/ElasticFusion -fo -q -e 250 -l ../log_files/dyson_lab.klg
+#./GUI/build/ElasticFusion -fo -q -e 250 -l ../log_files/dyson_lab.klg
+./GUI/build/ElasticFusion -fo -q -e 250 -icl -l ../Datasets/livingRoom2/new_klg/livingRoom2.klg
 
 ###./GUI/build/ElasticFusion -cal FX FY CX CY -q -l ../log_files/dyson_lab.klg NOTE for calibration !
-###./GUI/build/ElasticFusion -q -nso -l ../log_files/dyson_lab.klg             NOTE disable SO(3) pre-alignment in tracking
-###./GUI/build/ElasticFusion -q -fo -l ../log_files/dyson_lab.klg              NOTE fast odometry (single level pyramid)
-###./GUI/build/ElasticFusion -q -o -l ../log_files/dyson_lab.klg               NOTE open loop mode
+### -nso NOTE disable SO(3) pre-alignment in tracking
+### -fo  NOTE fast odometry (single level pyramid)
+### -o   NOTE open loop mode
 
 ## All of the possible combinations of flags to use. Give an accuracy / speed tradeoff !
+# Should be able to call like ./test_all "-list -of -flags" briefDesc :
+#./test_all.sh "           " none
+#./test_all.sh "       -nso" noSO3
+#./test_all.sh "   -fo     " fastOdom
+#./test_all.sh "   -fo -nso" fastOdom_noSO3
+#./test_all.sh "-o         " openLoop
+#./test_all.sh "-o     -nso" openLoop_noSO3
+#./test_all.sh "-o -fo     " openLoop_fastOdom
+#./test_all.sh "-o -fo -nso" openLoop_fastOdom_noSO3
 
 #./GUI/build/ElasticFusion             -q -l ../log_files/dyson_lab.klg
 #./GUI/build/ElasticFusion        -nso -q -l ../log_files/dyson_lab.klg
