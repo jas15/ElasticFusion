@@ -79,7 +79,7 @@ ElasticFusion::ElasticFusion(const int timeDelta,
    maxDepthProcessed(20.0f),
    rgbOnly(false),
    icpWeight(icpThresh),
-   pyramid(true),
+   pyramid(true), //TODO change here to remove pyramid
    fastOdom(fastOdom),
    confidenceThreshold(confidence),
    fernThresh(fernThresh),
@@ -173,46 +173,43 @@ ElasticFusion::~ElasticFusion()
 void ElasticFusion::createTextures()
 {
   //NOTE createTextures takes 2.245ms. only called in init
-  //easier to read. why do ppl copy the same 40 characters in 6 different places within 40 lines ?! twice !
-  int w = RES_WIDTH;
-  int h = RES_HEIGHT;
 
-  textures[GPUTexture::RGB]                   = new GPUTexture(w,
-                                                               h,
+  textures[GPUTexture::RGB]                   = new GPUTexture(RES_WIDTH,
+                                                               RES_HEIGHT,
                                                                GL_RGBA,
                                                                GL_RGB,
                                                                GL_UNSIGNED_BYTE,
                                                                true,
                                                                true);
 
-  textures[GPUTexture::DEPTH_RAW]             = new GPUTexture(w,
-                                                               h,
+  textures[GPUTexture::DEPTH_RAW]             = new GPUTexture(RES_WIDTH,
+                                                               RES_HEIGHT,
                                                                GL_LUMINANCE16UI_EXT,
                                                                GL_LUMINANCE_INTEGER_EXT,
                                                                GL_UNSIGNED_SHORT);
 
-  textures[GPUTexture::DEPTH_FILTERED]        = new GPUTexture(w,
-                                                               h,
+  textures[GPUTexture::DEPTH_FILTERED]        = new GPUTexture(RES_WIDTH,
+                                                               RES_HEIGHT,
                                                                GL_LUMINANCE16UI_EXT,
                                                                GL_LUMINANCE_INTEGER_EXT,
                                                                GL_UNSIGNED_SHORT,
                                                                false,
                                                                true);
 
-  textures[GPUTexture::DEPTH_METRIC]          = new GPUTexture(w,
-                                                               h,
+  textures[GPUTexture::DEPTH_METRIC]          = new GPUTexture(RES_WIDTH,
+                                                               RES_HEIGHT,
                                                                GL_LUMINANCE32F_ARB,
                                                                GL_LUMINANCE,
                                                                GL_FLOAT);
 
-  textures[GPUTexture::DEPTH_METRIC_FILTERED] = new GPUTexture(w,
-                                                               h,
+  textures[GPUTexture::DEPTH_METRIC_FILTERED] = new GPUTexture(RES_WIDTH,
+                                                               RES_HEIGHT,
                                                                GL_LUMINANCE32F_ARB,
                                                                GL_LUMINANCE,
                                                                GL_FLOAT);
 
-  textures[GPUTexture::DEPTH_NORM]            = new GPUTexture(w,
-                                                               h,
+  textures[GPUTexture::DEPTH_NORM]            = new GPUTexture(RES_WIDTH,
+                                                               RES_HEIGHT,
                                                                GL_LUMINANCE,
                                                                GL_LUMINANCE,
                                                                GL_FLOAT,
