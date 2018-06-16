@@ -79,7 +79,7 @@ ElasticFusion::ElasticFusion(const int timeDelta,
    maxDepthProcessed(20.0f),
    rgbOnly(false),
    icpWeight(icpThresh),
-   pyramid(true), //TODO change here to remove pyramid
+   pyramid(false), //TODO change here to remove pyramid
    fastOdom(fastOdom),
    confidenceThreshold(confidence),
    fernThresh(fernThresh),

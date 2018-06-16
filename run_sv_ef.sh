@@ -6,7 +6,7 @@
 
 #Run ElasticFusion with fast odometry, quitting at the end of a log file, ending the log at 250 frames
 #./GUI/build/ElasticFusion -fo -q -e 250 -l ../log_files/dyson_lab.klg
-#./GUI/build/ElasticFusion -fo -q -e 250 -icl -l ../Datasets/livingRoom2/new_klg/livingRoom2.klg
+./GUI/build/ElasticFusion -q -icl -l ../Datasets/livingRoom3/new_klg/livingRoom3.klg
 
 ###./GUI/build/ElasticFusion -cal FX FY CX CY -q -l ../log_files/dyson_lab.klg NOTE for calibration !
 ### -nso NOTE disable SO(3) pre-alignment in tracking
@@ -16,14 +16,22 @@
 ## All of the possible combinations of flags to use. Give an accuracy / speed tradeoff !
 # Should be able to call like ./test_all "-list -of -flags" briefDesc :
 
-./test_all.sh "           " none
-./test_all.sh "       -nso" noSO3
-./test_all.sh "   -fo     " fastOdom
-./test_all.sh "   -fo -nso" fastOdom_noSO3
-./test_all.sh "-o         " openLoop
-./test_all.sh "-o     -nso" openLoop_noSO3
-./test_all.sh "-o -fo     " openLoop_fastOdom
-./test_all.sh "-o -fo -nso" openLoop_fastOdom_noSO3
+#./test_all.sh "           " none
+#echo "----------------------------------- 1 ---------------------------------------"
+#./test_all.sh "       -nso" noSO3
+#echo "----------------------------------- 2 ---------------------------------------"
+#./test_all.sh "   -fo     " fastOdom
+#echo "----------------------------------- 3 ---------------------------------------"
+#./test_all.sh "   -fo -nso" fastOdom_noSO3
+#echo "----------------------------------- 4 ---------------------------------------"
+#./test_all.sh "-o         " openLoop
+#echo "----------------------------------- 5 ---------------------------------------"
+#./test_all.sh "-o     -nso" openLoop_noSO3
+#echo "----------------------------------- 6 ---------------------------------------"
+#./test_all.sh "-o -fo     " openLoop_fastOdom
+#echo "----------------------------------- 7 ---------------------------------------"
+#./test_all.sh "-o -fo -nso" openLoop_fastOdom_noSO3
+#echo "----------------------------------- 8 ---------------------------------------"
 
 #"or disable the tracking pyramid" IN MAINCONTROLLER.CPP towards the bottom of the big commented out bit (pass in false)
 
