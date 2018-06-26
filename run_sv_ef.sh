@@ -2,38 +2,14 @@
 
 #Simply run StopwatchViewer and EF
 
-#./../Stopwatch/build/StopwatchViewer &
+./../Stopwatch/build/StopwatchViewer &
 
-#Run ElasticFusion with fast odometry, quitting at the end of a log file, ending the log at 250 frames
-#./GUI/build/ElasticFusion -fo -q -e 250 -l ../log_files/dyson_lab.klg
-./GUI/build/ElasticFusion -q -icl -l ../Datasets/livingRoom3/new_klg/livingRoom3.klg
+#./GUI/build/ElasticFusion -q -icl -l ../../Datasets/livingRoom3/new_klg/livingRoom3.klg
+./GUI/build/ElasticFusion -q -l ../../Datasets/dyson_lab.klg
 
-###./GUI/build/ElasticFusion -cal FX FY CX CY -q -l ../log_files/dyson_lab.klg NOTE for calibration !
 ### -nso NOTE disable SO(3) pre-alignment in tracking
 ### -fo  NOTE fast odometry (single level pyramid)
 ### -o   NOTE open loop mode
-
-## All of the possible combinations of flags to use. Give an accuracy / speed tradeoff !
-# Should be able to call like ./test_all "-list -of -flags" briefDesc :
-
-#./test_all.sh "           " none
-#echo "----------------------------------- 1 ---------------------------------------"
-#./test_all.sh "       -nso" noSO3
-#echo "----------------------------------- 2 ---------------------------------------"
-#./test_all.sh "   -fo     " fastOdom
-#echo "----------------------------------- 3 ---------------------------------------"
-#./test_all.sh "   -fo -nso" fastOdom_noSO3
-#echo "----------------------------------- 4 ---------------------------------------"
-#./test_all.sh "-o         " openLoop
-#echo "----------------------------------- 5 ---------------------------------------"
-#./test_all.sh "-o     -nso" openLoop_noSO3
-#echo "----------------------------------- 6 ---------------------------------------"
-#./test_all.sh "-o -fo     " openLoop_fastOdom
-#echo "----------------------------------- 7 ---------------------------------------"
-#./test_all.sh "-o -fo -nso" openLoop_fastOdom_noSO3
-#echo "----------------------------------- 8 ---------------------------------------"
-
-#"or disable the tracking pyramid" IN MAINCONTROLLER.CPP towards the bottom of the big commented out bit (pass in false)
 
 ## Other things that we could look to change
 #-c  <><> Surfel confidence threshold (default *10*).
@@ -44,7 +20,7 @@
 #-pt <><> Global loop closure photometric threshold (default *115*).
 #-ft <><> Fern encoding threshold (default *0.3095*).
 
-## More flags that could be important... What about -sc?
+## More flags that could be important...
 #-icl : Enable this if using the [ICL-NUIM](http://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html) dataset (flips normals to account for negative focal length on that data).
 #-rl  : Enable relocalisation.
 #-ftf : Do frame-to-frame RGB tracking. 
