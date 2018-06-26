@@ -1,5 +1,5 @@
 #!/bin/bash
 
-cd ../../log_files
+cd /home/nvidia/Datasets
 
-wget http://www.doc.ic.ac.uk/~sleutene/datasets/elasticfusion/dyson_lab.klg
+wget -q --show-progress http://www.doc.ic.ac.uk/~sleutene/datasets/elasticfusion/dyson_lab.klg

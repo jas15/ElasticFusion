@@ -424,13 +424,18 @@ void RGBDOdometry::getIncrementalTransformation(Eigen::Vector3f & trans,
 
   if(so3)
   {
+    TICK("so3fri");
     for(int x = 0; x < 3; x++)
     {
-      for(int y = 0; y < 3; y++)
-      {
-        resultRt(x, y) = resultR(x, y);
-      }
+      resultRt(x, 0) = resultR(x, 0);
+      resultRt(x, 1) = resultR(x, 1);
+      resultRt(x, 2) = resultR(x, 2);
+      //for(int y = 0; y < 3; y++)
+      //{
+      //  resultRt(x, y) = resultR(x, y);
+      //}
     }
+    TOCK("so3fri");
   }
 
   for(int i = NUM_PYRS - 1; i >= 0; i--)

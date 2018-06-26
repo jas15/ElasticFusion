@@ -1,6 +1,0 @@
-Core/src/IndexMap.h:#include <pangolin/gl/gl.h>
-Core/src/GlobalModel.h:#include <pangolin/gl/gl.h>
-Core/src/Deformation.h:#include <pangolin/gl/gl.h>
-Core/src/Shaders/FeedbackBuffer.h:#include <pangolin/gl/gl.h>
-Core/src/Shaders/ComputePack.h:#include <pangolin/gl/gl.h>
-GUI/src/Tools/GUI.h:#include <pangolin/gl/gl.h>

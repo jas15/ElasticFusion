@@ -34,7 +34,7 @@ MainController::MainController(int argc, char * argv[])
   std::string calibrationFile;
   Parse::get().arg(argc, argv, "-cal", calibrationFile);
 
-  Resolution::getInstance(RES_WIDTH, RES_HEIGHT); //NOTE can I change this? I feel like I can't as that's VGA == sensor
+  Resolution::getInstance(640, 480); //NOTE can I change this? I feel like I can't as that's VGA == sensor
 
   if(calibrationFile.length())
   {
@@ -301,7 +301,6 @@ void MainController::run()
     
     TICK("GUI");
 
-    /*
     if(gui->followPose->Get())
     {
       pangolin::OpenGlMatrix mv;
@@ -535,6 +534,15 @@ void MainController::run()
 
     gui->postCall();
 
+    logReader->flipColors = gui->flipColors->Get();
+    eFusion->setRgbOnly(gui->rgbOnly->Get());
+    eFusion->setPyramid(gui->pyramid->Get());
+    eFusion->setFastOdom(gui->fastOdom->Get());
+    eFusion->setConfidenceThreshold(gui->confidenceThreshold->Get());
+    eFusion->setDepthCutoff(gui->depthCutoff->Get());
+    eFusion->setIcpWeight(gui->icpWeight->Get());
+    eFusion->setSo3(gui->so3->Get());
+    eFusion->setFrameToFrameRGB(gui->frameToFrameRGB->Get());
 
     resetButton = pangolin::Pushed(*gui->reset);
 
@@ -548,22 +556,10 @@ void MainController::run()
         static_cast<LiveLogReader *>(logReader)->setAuto(last);
       }
     }
-    */
-
-    //logReader->flipColors = gui->flipColors->Get();
-    //eFusion->setRgbOnly(gui->rgbOnly->Get());
-    //eFusion->setPyramid(gui->pyramid->Get()); //TODO change to false to remove pyramid
-    //eFusion->setFastOdom(gui->fastOdom->Get());
-    //eFusion->setConfidenceThreshold(gui->confidenceThreshold->Get());
-    //eFusion->setDepthCutoff(gui->depthCutoff->Get());
-    //eFusion->setIcpWeight(gui->icpWeight->Get());
-    //eFusion->setSo3(gui->so3->Get());
-    //eFusion->setFrameToFrameRGB(gui->frameToFrameRGB->Get());
 
     //NOTE still need this to push the timings
     Stopwatch::getInstance().sendAll();
 
-    /*
     if(resetButton)
     {
       break;
@@ -573,26 +569,8 @@ void MainController::run()
     {
       eFusion->savePly();
     }
-    */
 
     TOCK("GUI");
-    /*
-    if (eFusion->getTick() == end)
-    {
-
-    }
-    */
   }
-
-  eFusion->savePly();
-  pangolin::QuitAll();
-
-  //TODO unsure if this actually works hurmmmm
-  //if it doesnt will basically have to run 2 tests for each thing, one with gui and one w/o
-  /*if (!logReader->hasMore())
-  {
-    eFusion->savePly();
-    pangolin::QuitAll();
-  }*/
 
 }

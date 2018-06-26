@@ -1,7 +1,6 @@
 #!/bin/bash
 
-cd .. # get out of other_scripts
-cd .. #get out of elasticfusion
+cd /home/nvidia/Elasticfusion/
 
 #Need to install QT 4.x+ first
 sudo apt-get install -y qt4-dev-tools
